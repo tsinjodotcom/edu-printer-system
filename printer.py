@@ -47,12 +47,12 @@ def format_currency(amount: float) -> str:
 
 def translate_payment_method(method_id: int) -> str:
     methods = {
-        1: "Espèces",
+        1: "Especes",
         2: "MVola",
         3: "Airtel Money",
         4: "Orange Money"
     }
-    return methods.get(method_id, f"Méthode {method_id}")
+    return methods.get(method_id, f"Methode {method_id}")
 
 def wrap_text(text: str, max_width: int) -> List[str]:
     words = text.split()
@@ -74,8 +74,9 @@ def wrap_text(text: str, max_width: int) -> List[str]:
     return lines if lines else [""]
 
 def format_label_value(label: str, value: str) -> str:
-    label_width = 12
-    label_part = f"{label:<{label_width}} : "
+    label_width = 14
+    dots_needed = label_width - len(label) - 1
+    label_part = f"{label}{'.' * dots_needed}: "
     remaining_width = MAX_LINE_WIDTH - len(label_part)
     
     if len(value) <= remaining_width:
@@ -121,11 +122,13 @@ def generate_invoice_string(data: Invoice) -> str:
     lines.append(school_email)
     lines.append("-" * MAX_LINE_WIDTH)
     
-    invoice_status = "PAYÉE" if data['invoicePaymentState'] == "PAID" else data['invoicePaymentState']
+    invoice_status = "PAYEE" if data['invoicePaymentState'] == "PAID" else data['invoicePaymentState']
     lines.append(format_label_value("FACTURE", data['invoiceNumber']))
     lines.append(format_label_value("STATUT", invoice_status))
     
-    client_label_part = "CLIENT      : "
+    client_label = "CLIENT"
+    client_dots = "." * (14 - len(client_label) - 1)
+    client_label_part = f"{client_label}{client_dots}: "
     client_remaining_width = MAX_LINE_WIDTH - len(client_label_part)
     client_lines = wrap_text(data['clientName'], client_remaining_width)
     lines.append(f"{client_label_part}{client_lines[0]}")
@@ -134,14 +137,14 @@ def generate_invoice_string(data: Invoice) -> str:
     
     contact_value = data['clientContact'] if data['clientContact'] and data['clientContact'] != "--" else "--"
     lines.append(format_label_value("CONTACT", contact_value))
-    lines.append(format_label_value("CRÉÉE LE", format_date(data['creationDate'])))
+    lines.append(format_label_value("CREE LE", format_date(data['creationDate'])))
     
     if data['paidDate']:
-        lines.append(format_label_value("PAYÉE LE", format_date(data['paidDate'])))
+        lines.append(format_label_value("PAYEE LE", format_date(data['paidDate'])))
     
     lines.append("-" * MAX_LINE_WIDTH)
     designation_header_width = 24
-    lines.append(f"{'DÉSIGNATION':<{designation_header_width}}MONTANT")
+    lines.append(f"{'DESIGNATION':<{designation_header_width}}MONTANT")
     lines.append("-" * MAX_LINE_WIDTH)
     
     total = 0.0
@@ -159,7 +162,7 @@ def generate_invoice_string(data: Invoice) -> str:
     lines.append("-" * MAX_LINE_WIDTH)
     
     if data['payments']:
-        lines.append("RÈGLEMENTS")
+        lines.append("REGLEMENTS")
         for payment in data['payments']:
             payment_date = format_date(payment['paymentDateTime'])
             payment_amount = format_currency(payment['amount'])
@@ -168,17 +171,17 @@ def generate_invoice_string(data: Invoice) -> str:
             lines.append(f"{payment_date:<{date_width}} {payment_amount}")
             
             method = translate_payment_method(payment['methodPaymentId'])
-            lines.append(format_label_value("MÉTHODE", method))
+            lines.append(format_label_value("METHODE", method))
             
             if payment['methodPaymentId'] != 1:
                 ref_value = payment['reference'] if payment['reference'] else "-"
                 account_value = payment['account'] if payment['account'] else "-"
-                lines.append(format_label_value("Réf", ref_value))
+                lines.append(format_label_value("Ref", ref_value))
                 lines.append(format_label_value("Compte", account_value))
     
     lines.append("-" * MAX_LINE_WIDTH)
     print_date = datetime.now().strftime("%d/%m/%Y %H:%M")
-    lines.append(f"Imprimé le : {print_date}")
+    lines.append(f"Imprime le : {print_date}")
     lines.append("Merci pour votre confiance.")
     
     return "\n".join(lines) + "\n"
