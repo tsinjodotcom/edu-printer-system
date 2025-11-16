@@ -135,7 +135,6 @@ def generate_invoice_string(data: Invoice) -> str:
     for line in client_lines[1:]:
         lines.append(" " * len(client_label_part) + line)
     
-    lines.append("")
     contact_value = data['clientContact'] if data['clientContact'] and data['clientContact'] != "--" else "--"
     lines.append(format_label_value("CONTACT", contact_value))
     lines.append(format_label_value("CREE LE", format_date(data['creationDate'])))
@@ -188,7 +187,8 @@ def generate_invoice_string(data: Invoice) -> str:
     while lines and not lines[-1].strip():
         lines.pop()
     
-    return "\n".join(lines)
+    result = "\n".join(lines)
+    return result.rstrip()
 
 def pos_print(data: Invoice) -> None:
     vendor_id = int(os.getenv("PRINTER_VENDOR_ID", "0x28E9"), 16)
