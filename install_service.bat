@@ -48,12 +48,33 @@ echo.
 REM Check if NSSM is available
 echo [LOG] Checking for NSSM...
 echo [LOG] Checking if NSSM exists at: %NSSM_PATH%
+
+REM Check in script directory first
 if exist "%NSSM_PATH%" (
     echo [LOG] NSSM found in script directory
     set NSSM_CMD=%NSSM_PATH%
     goto nssm_found
 )
 
+REM Check in common subfolders
+set NSSM_SUBFOLDER=%SCRIPT_DIR%nssm-2.24\win64\nssm.exe
+echo [LOG] Checking subfolder: %NSSM_SUBFOLDER%
+if exist "%NSSM_SUBFOLDER%" (
+    echo [LOG] NSSM found in subfolder
+    set NSSM_CMD=%NSSM_SUBFOLDER%
+    goto nssm_found
+)
+
+REM Check in win64 subfolder
+set NSSM_WIN64=%SCRIPT_DIR%win64\nssm.exe
+echo [LOG] Checking win64 folder: %NSSM_WIN64%
+if exist "%NSSM_WIN64%" (
+    echo [LOG] NSSM found in win64 folder
+    set NSSM_CMD=%NSSM_WIN64%
+    goto nssm_found
+)
+
+REM Check PATH
 echo [LOG] NSSM not found in script directory, checking PATH...
 where nssm >nul 2>&1
 if not errorlevel 1 (
@@ -67,20 +88,16 @@ echo [ERROR] Please download NSSM from: https://nssm.cc/download
 echo [ERROR] Extract nssm.exe from the win64 folder and place it in this folder
 echo [ERROR] Current directory: %SCRIPT_DIR%
 echo [ERROR] Expected NSSM path: %NSSM_PATH%
+echo [ERROR] Also checked: %NSSM_SUBFOLDER%
+echo [ERROR] Also checked: %NSSM_WIN64%
+echo [ERROR] Current directory files:
+dir /b
 pause
 exit /b 1
 
 :nssm_found
 echo [LOG] Using NSSM command: %NSSM_CMD%
-echo [LOG] Verifying NSSM works...
-"%NSSM_CMD%" version >nul 2>&1
-if errorlevel 1 (
-    echo [ERROR] NSSM command failed to execute
-    echo [ERROR] Command: %NSSM_CMD%
-    pause
-    exit /b 1
-)
-echo [LOG] NSSM verified successfully
+echo [LOG] NSSM found, proceeding with installation...
 echo.
 
 REM Check if service already exists
