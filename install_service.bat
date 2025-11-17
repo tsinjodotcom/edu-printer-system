@@ -47,24 +47,40 @@ echo.
 
 REM Check if NSSM is available
 echo [LOG] Checking for NSSM...
-if not exist "%NSSM_PATH%" (
-    echo [LOG] NSSM not found in script directory, checking PATH...
-    where nssm >nul 2>&1
-    if errorlevel 1 (
-        echo [ERROR] NSSM (Non-Sucking Service Manager) is not found.
-        echo [ERROR] Please download NSSM from: https://nssm.cc/download
-        echo [ERROR] Extract nssm.exe from the win64 folder and place it in this folder
-        echo [ERROR] Current directory: %SCRIPT_DIR%
-        pause
-        exit /b 1
-    )
-    echo [LOG] NSSM found in PATH
-    set NSSM_CMD=nssm
-) else (
+echo [LOG] Checking if NSSM exists at: %NSSM_PATH%
+if exist "%NSSM_PATH%" (
     echo [LOG] NSSM found in script directory
     set NSSM_CMD=%NSSM_PATH%
+    goto nssm_found
 )
+
+echo [LOG] NSSM not found in script directory, checking PATH...
+where nssm >nul 2>&1
+if not errorlevel 1 (
+    echo [LOG] NSSM found in PATH
+    set NSSM_CMD=nssm
+    goto nssm_found
+)
+
+echo [ERROR] NSSM (Non-Sucking Service Manager) is not found.
+echo [ERROR] Please download NSSM from: https://nssm.cc/download
+echo [ERROR] Extract nssm.exe from the win64 folder and place it in this folder
+echo [ERROR] Current directory: %SCRIPT_DIR%
+echo [ERROR] Expected NSSM path: %NSSM_PATH%
+pause
+exit /b 1
+
+:nssm_found
 echo [LOG] Using NSSM command: %NSSM_CMD%
+echo [LOG] Verifying NSSM works...
+"%NSSM_CMD%" version >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] NSSM command failed to execute
+    echo [ERROR] Command: %NSSM_CMD%
+    pause
+    exit /b 1
+)
+echo [LOG] NSSM verified successfully
 echo.
 
 REM Check if service already exists
