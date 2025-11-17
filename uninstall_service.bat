@@ -32,17 +32,37 @@ echo.
 
 REM Check if NSSM is available
 echo [LOG] Checking for NSSM...
-if not exist "%NSSM_PATH%" (
-    echo [ERROR] NSSM (Non-Sucking Service Manager) is not found.
-    echo [ERROR] Expected location: %NSSM_PATH%
-    echo [ERROR] Please make sure nssm.exe is in the same folder as this script
-    echo [ERROR] Current directory contents:
-    dir /b
-    pause
-    exit /b 1
+echo [LOG] NSSM_PATH variable: %NSSM_PATH%
+echo [LOG] Testing if file exists...
+
+REM Test the path
+if exist "%NSSM_PATH%" (
+    echo [LOG] NSSM file exists - path check passed
+    goto nssm_exists
 )
+
+echo [LOG] NSSM not found at expected path
+echo [LOG] Listing current directory to verify...
+dir /b
+echo [LOG] Checking for nssm.exe in current directory...
+if exist "nssm.exe" (
+    echo [LOG] Found nssm.exe in current directory
+    set NSSM_CMD=%CD%\nssm.exe
+    goto nssm_found
+)
+
+echo [ERROR] NSSM (Non-Sucking Service Manager) is not found.
+echo [ERROR] Expected location: %NSSM_PATH%
+echo [ERROR] Current directory: %CD%
+echo [ERROR] Please make sure nssm.exe is in the same folder as this script
+pause
+exit /b 1
+
+:nssm_exists
 echo [LOG] NSSM found successfully
 set NSSM_CMD=%NSSM_PATH%
+
+:nssm_found
 echo [LOG] Using NSSM command: %NSSM_CMD%
 echo.
 
