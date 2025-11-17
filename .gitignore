@@ -53,3 +53,9 @@ cython_debug/
 *.swo
 *~
 
+venv_build/
+build/
+dist/
+installer/
+*.spec.bak
+
