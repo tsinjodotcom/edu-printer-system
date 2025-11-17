@@ -20,37 +20,15 @@ set NSSM_PATH=%SCRIPT_DIR%\nssm.exe
 
 REM Check if NSSM is available
 if not exist "%NSSM_PATH%" (
-    REM Check in common subfolders
-    set NSSM_SUBFOLDER=%SCRIPT_DIR%\nssm-2.24\win64\nssm.exe
-    if exist "%NSSM_SUBFOLDER%" (
-        set NSSM_CMD=%NSSM_SUBFOLDER%
-        goto nssm_found
-    )
-    
-    REM Check in win64 subfolder
-    set NSSM_WIN64=%SCRIPT_DIR%\win64\nssm.exe
-    if exist "%NSSM_WIN64%" (
-        set NSSM_CMD=%NSSM_WIN64%
-        goto nssm_found
-    )
-    
-    REM Check PATH
-    where nssm >nul 2>&1
-    if not errorlevel 1 (
-        set NSSM_CMD=nssm
-        goto nssm_found
-    )
-    
     echo ERROR: NSSM (Non-Sucking Service Manager) is not found.
-    echo Please download NSSM from: https://nssm.cc/download
-    echo Extract nssm.exe from the win64 folder and place it in this folder
+    echo Expected location: %NSSM_PATH%
+    echo Please make sure nssm.exe is in the same folder as this script
     pause
     exit /b 1
-) else (
-    set NSSM_CMD=%NSSM_PATH%
 )
 
-:nssm_found
+set NSSM_CMD=%NSSM_PATH%
+
 echo Stopping service...
 net stop EduPrinterService >nul 2>&1
 
