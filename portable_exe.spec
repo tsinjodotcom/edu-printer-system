@@ -1,6 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
+import escpos
 
 block_cipher = None
+
+escpos_path = os.path.dirname(escpos.__file__)
+escpos_data_files = []
+
+capabilities_json = os.path.join(escpos_path, 'capabilities.json')
+if os.path.exists(capabilities_json):
+    escpos_data_files.append((capabilities_json, 'escpos'))
 
 a = Analysis(
     ['main.py'],
@@ -8,17 +17,25 @@ a = Analysis(
     binaries=[],
     datas=[
         ('logo.png', '.'),
-    ],
+    ] + escpos_data_files,
     hiddenimports=[
         'flask',
         'flask_cors',
         'dotenv',
         'escpos',
+        'escpos.printer',
+        'escpos.escpos',
+        'escpos.capabilities',
         'PIL',
+        'PIL.Image',
         'usb',
+        'usb.core',
+        'usb.util',
         'serial',
+        'serial.tools',
+        'serial.tools.list_ports',
     ],
-    hookspath=[],
+    hookspath=['hooks'],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
