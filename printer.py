@@ -1,5 +1,5 @@
 import os
-from typing import TypedDict, List, Optional
+from typing import TypedDict, List, Optional, Union
 from escpos.printer import Usb
 from datetime import datetime
 
@@ -17,7 +17,7 @@ class InvoiceElement(TypedDict):
 class Payment(TypedDict):
     id: int
     amount: float
-    paymentDateTime: str
+    paymentDateTime: Union[str, int, float]
     reference: str
     account: str
     methodPaymentId: int
@@ -29,18 +29,22 @@ class Invoice(TypedDict):
     clientName: str
     clientContact: str
     invoicePaymentState: str
-    creationDate: str
-    dueDate: Optional[str]
-    paidDate: str
+    creationDate: Union[str, int, float]
+    dueDate: Optional[Union[str, int, float]]
+    paidDate: Union[str, int, float]
     elements: List[InvoiceElement]
     payments: List[Payment]
 
-def format_date(date_str: str) -> str:
+def format_date(date_value: Union[str, int, float]) -> str:
     try:
-        dt = datetime.fromisoformat(date_str.replace("+00:00", ""))
-        return dt.strftime("%d/%m/%Y %H:%M")
+        if isinstance(date_value, (int, float)):
+            dt = datetime.fromtimestamp(date_value / 1000.0)
+            return dt.strftime("%d/%m/%Y %H:%M")
+        else:
+            dt = datetime.fromisoformat(date_value.replace("+00:00", ""))
+            return dt.strftime("%d/%m/%Y %H:%M")
     except Exception:
-        return date_str
+        return str(date_value)
 
 def format_currency(amount: float) -> str:
     return f"{int(amount):,}".replace(",", " ")
