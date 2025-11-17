@@ -58,7 +58,6 @@ build/
 dist/
 installer/
 *.spec.bak
-nssm.exe
 service.log
 service_error.log
 
