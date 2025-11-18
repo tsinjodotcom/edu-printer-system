@@ -78,7 +78,7 @@ def wrap_text(text: str, max_width: int) -> List[str]:
     return lines if lines else [""]
 
 def format_label_value(label: str, value: str) -> str:
-    label_width = 14
+    label_width = 10
     dots_needed = label_width - len(label) - 1
     label_part = f"{label}{'.' * dots_needed}: "
     remaining_width = MAX_LINE_WIDTH - len(label_part)
