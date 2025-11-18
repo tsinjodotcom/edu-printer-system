@@ -109,26 +109,15 @@ def format_designation_amount(designation: str, amount: str) -> str:
 
 def generate_invoice_string(data: Invoice) -> str:
     school_name = os.getenv("SCHOOL_NAME", "INSTITUTION MARTHE HERVEE")
-    school_address = os.getenv("SCHOOL_ADDRESS", "Ankasina, Bd de l'Europe, L. P. Rahajason, Antananarivo, Madagascar")
     school_phone = os.getenv("SCHOOL_PHONE", "+261 034 08 040 83")
-    school_email = os.getenv("SCHOOL_EMAIL", "imh@gmail.com")
     
     lines = []
     
     lines.append(school_name.upper())
-    lines.append("-" * MAX_LINE_WIDTH)
-    
-    address_lines = wrap_text(school_address, MAX_LINE_WIDTH)
-    lines.extend(address_lines)
-    
-    lines.append("-" * MAX_LINE_WIDTH)
     lines.append(school_phone)
-    lines.append(school_email)
     lines.append("-" * MAX_LINE_WIDTH)
     
-    invoice_status = "PAYEE" if data['invoicePaymentState'] == "PAID" else data['invoicePaymentState']
     lines.append(format_label_value("FACTURE", data['invoiceNumber']))
-    lines.append(format_label_value("STATUT", invoice_status))
     
     client_label = "CLIENT"
     client_dots = "." * (14 - len(client_label) - 1)
@@ -138,10 +127,6 @@ def generate_invoice_string(data: Invoice) -> str:
     lines.append(f"{client_label_part}{client_lines[0]}")
     for line in client_lines[1:]:
         lines.append(" " * len(client_label_part) + line)
-    
-    contact_value = data['clientContact'] if data['clientContact'] and data['clientContact'] != "--" else "--"
-    lines.append(format_label_value("CONTACT", contact_value))
-    lines.append(format_label_value("CREE LE", format_date(data['creationDate'])))
     
     if data['paidDate']:
         lines.append(format_label_value("PAYEE LE", format_date(data['paidDate'])))
@@ -165,28 +150,7 @@ def generate_invoice_string(data: Invoice) -> str:
     lines.append(f"{'TOTAL':<{designation_width}} {total_str}")
     lines.append("-" * MAX_LINE_WIDTH)
     
-    if data['payments']:
-        lines.append("REGLEMENTS")
-        for payment in data['payments']:
-            payment_date = format_date(payment['paymentDateTime'])
-            payment_amount = format_currency(payment['amount'])
-            amount_width = len(payment_amount)
-            date_width = MAX_LINE_WIDTH - amount_width - 1
-            lines.append(f"{payment_date:<{date_width}} {payment_amount}")
-            
-            method = translate_payment_method(payment['methodPaymentId'])
-            lines.append(format_label_value("METHODE", method))
-            
-            if payment['methodPaymentId'] != 1:
-                ref_value = payment['reference'] if payment['reference'] else "-"
-                account_value = payment['account'] if payment['account'] else "-"
-                lines.append(format_label_value("Ref", ref_value))
-                lines.append(format_label_value("Compte", account_value))
-    
-    lines.append("-" * MAX_LINE_WIDTH)
-    lines.append("Merci pour votre confiance.")
-    print_date = datetime.now().strftime("%d/%m/%Y %H:%M")
-    lines.append(f"Imprime le : {print_date}")
+    lines.append("Jésus, mon maître souverain.")
     
     while lines and not lines[-1].strip():
         lines.pop()
