@@ -158,12 +158,15 @@ def generate_invoice_string(data: Invoice) -> str:
     result = "\n".join(lines)
     return result.rstrip()
 
-def pos_print(data: Invoice) -> None:
+def pos_print(data: Invoice, duplication: int = 2) -> None:
     vendor_id = int(os.getenv("PRINTER_VENDOR_ID", "0x28E9"), 16)
     product_id = int(os.getenv("PRINTER_PRODUCT_ID", "0x0289"), 16)
     p = Usb(vendor_id, product_id)
     
     invoice_string = generate_invoice_string(data)
-    p.text(invoice_string)
+    for i in range(duplication):
+        p.text(invoice_string)
+        if i < duplication - 1:
+            p.text("\n" + "=" * MAX_LINE_WIDTH + "\n" + "=" * MAX_LINE_WIDTH + "\n")
     p.cut()
 
