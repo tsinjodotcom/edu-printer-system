@@ -90,7 +90,7 @@ def format_label_value(label: str, value: str) -> str:
         result = f"{label_part}{value_lines[0]}\n"
         for line in value_lines[1:]:
             result += f"{line}\n"
-        return result.rstrip()
+        return result
 
 def format_designation_amount(designation: str, amount: str) -> str:
     amount_width = len(amount)
@@ -122,7 +122,7 @@ def generate_invoice_string(data: Invoice) -> str:
     lines.append(client_line)
     
     if data['paidDate']:
-        date_line = format_label_value("PAYEE LE", format_date(data['paidDate']))
+        date_line = format_label_value("\nPAYEE LE", format_date(data['paidDate']))
         lines.append(date_line)
     
     lines.append("-" * MAX_LINE_WIDTH)
