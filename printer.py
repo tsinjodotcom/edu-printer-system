@@ -119,17 +119,12 @@ def generate_invoice_string(data: Invoice) -> str:
     
     lines.append(format_label_value("FACTURE", data['invoiceNumber']))
     
-    client_label = "CLIENT"
-    client_dots = "." * (14 - len(client_label) - 1)
-    client_label_part = f"{client_label}{client_dots}: "
-    client_remaining_width = MAX_LINE_WIDTH - len(client_label_part)
-    client_lines = wrap_text(data['clientName'], client_remaining_width)
-    lines.append(f"{client_label_part}{client_lines[0]}")
-    for line in client_lines[1:]:
-        lines.append(" " * len(client_label_part) + line)
+    client_line = format_label_value("CLIENT", data['clientName'])
+    lines.append(client_line)
     
     if data['paidDate']:
-        lines.append(format_label_value("PAYEE LE", format_date(data['paidDate'])))
+        date_line = format_label_value("PAYEE LE", format_date(data['paidDate']))
+        lines.append(date_line)
     
     lines.append("-" * MAX_LINE_WIDTH)
     designation_header_width = 24
@@ -150,7 +145,7 @@ def generate_invoice_string(data: Invoice) -> str:
     lines.append(f"{'TOTAL':<{designation_width}} {total_str}")
     lines.append("-" * MAX_LINE_WIDTH)
     
-    lines.append("Jésus, mon maître souverain.")
+    lines.append("Jesus, mon maitre souverain.")
     
     while lines and not lines[-1].strip():
         lines.pop()
@@ -167,6 +162,6 @@ def pos_print(data: Invoice, duplication: int = 2) -> None:
     for i in range(duplication):
         p.text(invoice_string)
         if i < duplication - 1:
-            p.text("\n" + "=" * MAX_LINE_WIDTH + "\n" + "=" * MAX_LINE_WIDTH + "\n")
+            p.text("\n" + "=" * MAX_LINE_WIDTH + "\n")
     p.cut()
 
