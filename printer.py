@@ -79,18 +79,17 @@ def wrap_text(text: str, max_width: int) -> List[str]:
 
 def format_label_value(label: str, value: str) -> str:
     label_width = 10
-    dots_needed = label_width - len(label) - 1
+    value_width = MAX_LINE_WIDTH - label_width
+    dots_needed = max(0, label_width - len(label) - 2)
     label_part = f"{label}{'.' * dots_needed}: "
-    remaining_width = MAX_LINE_WIDTH - len(label_part)
     
-    if len(value) <= remaining_width:
+    if len(value) <= value_width:
         return f"{label_part}{value}"
     else:
-        value_lines = wrap_text(value, remaining_width)
+        value_lines = wrap_text(value, value_width)
         result = f"{label_part}{value_lines[0]}\n"
-        indent = " " * len(label_part)
         for line in value_lines[1:]:
-            result += f"{indent}{line}\n"
+            result += f"{line}\n"
         return result.rstrip()
 
 def format_designation_amount(designation: str, amount: str) -> str:
