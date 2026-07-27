@@ -1,6 +1,8 @@
 escpos==2.0.0
-# escpos 2.0.0 imports pkg_resources at module load; setuptools 81 drops it.
-setuptools<81
+# escpos 2.0.0 imports pkg_resources at module load. setuptools 71 switched
+# pkg_resources to bare `import jaraco.text` resolved via a sys.path append,
+# which PyInstaller cannot follow; <=70 vendors it under pkg_resources.extern.
+setuptools<71
 Pillow==12.0.0
 flask==3.0.0
 flask-cors==4.0.0
