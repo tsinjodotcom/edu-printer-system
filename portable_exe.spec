@@ -19,6 +19,7 @@ a = Analysis(
         ('logo.png', '.'),
     ] + escpos_data_files,
     hiddenimports=[
+        'pkg_resources',
         'flask',
         'flask_cors',
         'dotenv',

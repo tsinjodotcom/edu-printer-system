@@ -1,4 +1,6 @@
 escpos==2.0.0
+# escpos 2.0.0 imports pkg_resources at module load; setuptools 81 drops it.
+setuptools<81
 Pillow==12.0.0
 flask==3.0.0
 flask-cors==4.0.0

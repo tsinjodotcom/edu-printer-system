@@ -25,6 +25,27 @@ jobs:
       - name: Build portable executable
         run: pyinstaller portable_exe.spec --clean --noconfirm
 
+      # Boots the real exe on real Windows. Catches import-time failures
+      # (missing bundled modules) that a successful PyInstaller run hides.
+      - name: Smoke test executable
+        run: |
+          $p = Start-Process -FilePath dist\EduPrinterSystem.exe -PassThru `
+                 -RedirectStandardOutput out.log -RedirectStandardError err.log
+          $ok = $false
+          foreach ($i in 1..30) {
+            Start-Sleep -Seconds 1
+            if ($p.HasExited) { break }
+            try {
+              $r = Invoke-WebRequest -Uri http://127.0.0.1:5050/ -UseBasicParsing -TimeoutSec 2
+              if ($r.StatusCode -eq 200) { $ok = $true; break }
+            } catch { }
+          }
+          if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
+          Write-Host "--- stdout ---"; Get-Content out.log -ErrorAction SilentlyContinue
+          Write-Host "--- stderr ---"; Get-Content err.log -ErrorAction SilentlyContinue
+          if (-not $ok) { throw "Executable did not serve GET / on port 5050" }
+          Write-Host "Smoke test passed: health endpoint returned 200"
+
       - name: Stage runtime files
         run: |
           copy logo.png dist\
