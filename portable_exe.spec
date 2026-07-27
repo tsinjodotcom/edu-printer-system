@@ -1,8 +1,14 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
 import escpos
+from PyInstaller.utils.hooks import collect_submodules
 
 block_cipher = None
+
+# pkg_resources.extern.<pkg> is synthesized at runtime by a VendorImporter and
+# does not exist on disk, so static analysis cannot follow it. Collect the real
+# pkg_resources._vendor.* modules the import ultimately resolves to.
+pkg_resources_hiddenimports = collect_submodules('pkg_resources')
 
 escpos_path = os.path.dirname(escpos.__file__)
 escpos_data_files = []
@@ -35,7 +41,7 @@ a = Analysis(
         'serial',
         'serial.tools',
         'serial.tools.list_ports',
-    ],
+    ] + pkg_resources_hiddenimports,
     hookspath=['hooks'],
     hooksconfig={},
     runtime_hooks=[],
