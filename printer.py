@@ -1,7 +1,8 @@
 import os
 from contextlib import closing
-from typing import TypedDict, List, Optional, Union
+from typing import Any, TypedDict, List, Optional, Union
 from escpos.printer import Usb
+from escpos.exceptions import USBNotFoundError
 from datetime import datetime
 
 PRINT_WIDTH_DOTS = 384
@@ -153,12 +154,52 @@ def generate_invoice_string(data: Invoice) -> str:
     result = "\n".join(lines)
     return result.rstrip()
 
+def get_usb_backend() -> Optional[Any]:
+    """libusb backend from the DLL shipped inside the app.
+
+    Bundling libusb means the host does not need one installed. Returns None
+    if it cannot be loaded, which makes pyusb search the system instead.
+    """
+    try:
+        import libusb_package
+        return libusb_package.get_libusb1_backend()
+    except Exception:
+        return None
+
+def usb_backend_name() -> Optional[str]:
+    """Backend pyusb would use, or None if no libusb is reachable at all."""
+    backend = get_usb_backend()
+    if backend is None:
+        try:
+            from usb.backend import libusb1, libusb0, openusb
+            for module in (libusb1, libusb0, openusb):
+                backend = module.get_backend()
+                if backend is not None:
+                    break
+        except Exception:
+            return None
+    return type(backend).__module__ if backend is not None else None
+
+def open_printer(vendor_id: int, product_id: int) -> Usb:
+    """Open the printer, preferring the bundled libusb over any system copy.
+
+    A device bound to the libusb-win32 driver may only be visible to the
+    system libusb, so fall back to pyusb's own search before giving up.
+    """
+    backend = get_usb_backend()
+    if backend is not None:
+        try:
+            return Usb(vendor_id, product_id, usb_args={"backend": backend})
+        except USBNotFoundError:
+            pass
+    return Usb(vendor_id, product_id)
+
 def pos_print(data: Invoice, duplication: int = 2) -> None:
     vendor_id = int(os.getenv("PRINTER_VENDOR_ID", "0x28E9"), 16)
     product_id = int(os.getenv("PRINTER_PRODUCT_ID", "0x0289"), 16)
     # Usb keeps a reference cycle, so GC may not free it before the next
     # request; closing() releases the USB interface deterministically.
-    with closing(Usb(vendor_id, product_id)) as p:
+    with closing(open_printer(vendor_id, product_id)) as p:
         invoice_string = generate_invoice_string(data)
         for i in range(duplication):
             p.text(invoice_string)

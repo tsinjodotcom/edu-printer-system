@@ -3,7 +3,7 @@ import sys
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
-from printer import pos_print
+from printer import pos_print, usb_backend_name
 
 if getattr(sys, 'frozen', False):
     application_path = os.path.dirname(sys.executable)
@@ -21,7 +21,7 @@ CORS(app, origins=[frontend_url])
 
 @app.route("/", methods=["GET"])
 def health():
-    return jsonify({"status": "healthy"}), 200
+    return jsonify({"status": "healthy", "usbBackend": usb_backend_name()}), 200
 
 @app.route("/print", methods=["POST"])
 def print_invoice():
