@@ -45,7 +45,7 @@ if errorlevel 1 (
 
 echo Step 5: Building portable executable with PyInstaller...
 echo (This may take a few minutes...)
-pyinstaller packaging\portable_exe.spec --clean --noconfirm
+pyinstaller packaging\portable_exe.spec --clean --noconfirm --workpath .pyinstaller
 if errorlevel 1 (
     echo ERROR: Failed to build executable
     pause

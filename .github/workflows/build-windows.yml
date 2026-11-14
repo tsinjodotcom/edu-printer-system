@@ -26,7 +26,7 @@ jobs:
         run: python -m unittest -v
 
       - name: Build portable executable
-        run: pyinstaller packaging/portable_exe.spec --clean --noconfirm
+        run: pyinstaller packaging/portable_exe.spec --clean --noconfirm --workpath .pyinstaller
 
       # Boots the real exe on real Windows. Catches import-time failures
       # (missing bundled modules) that a successful PyInstaller run hides.
@@ -65,7 +65,8 @@ jobs:
             if ($title) { break }
           }
           Get-Process EduPrinterSystem -ErrorAction SilentlyContinue | Stop-Process -Force
-          if ($title -ne "Edu Printer System") { throw "Settings window did not open (title: '$title')" }
+          # The title carries the service state, e.g. "Edu Printer System - Service not installed".
+          if ($title -notlike "Edu Printer System - *") { throw "Settings window did not open (title: '$title')" }
           Write-Host "Smoke test passed: window '$title' opened"
 
       # Installs the real Windows service from the exe, as the Install button does.
