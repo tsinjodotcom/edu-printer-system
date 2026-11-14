@@ -52,12 +52,6 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo Step 6: Copying additional files...
-if not exist dist mkdir dist
-copy assets\logo.png dist\ >nul 2>&1
-if exist .env copy .env dist\ >nul 2>&1
-if exist .env.example copy .env.example dist\ >nul 2>&1
-
 echo.
 echo ========================================
 echo Build complete!
@@ -67,10 +61,9 @@ echo Portable executable location: dist\EduPrinterSystem.exe
 echo.
 echo You can now:
 echo   - Copy EduPrinterSystem.exe anywhere
-echo   - Copy logo.png and .env to the same folder
-echo   - Double-click to run
+echo   - Double-click it to edit the settings and install the service
 echo.
-echo The application will run on port 5050 (or PORT from .env)
+echo Settings are saved in config.json next to the exe (default port: 5050)
 echo.
 pause
 

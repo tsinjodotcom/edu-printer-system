@@ -15,41 +15,31 @@ This guide explains how to create a standalone `.exe` file that can be dragged a
 
 3. **Use it anywhere:**
    - Copy `EduPrinterSystem.exe` to any folder
-   - Optionally copy `.env` file to the same folder (for configuration)
-   - Double-click to run
+   - Double-click to open the settings window
 
 ## What You Get
 
-After building, you'll have:
-- `dist\EduPrinterSystem.exe` - The portable executable (all-in-one)
-- `dist\logo.png` - Logo file (if needed)
-- `dist\.env` or `.env.example` - Configuration file
+After building, you'll have a single file: `dist\EduPrinterSystem.exe`. Everything else (Python, libusb, the service manager) is inside it.
 
 ## How to Use
 
-### Option 1: Simple Run
-1. Double-click `EduPrinterSystem.exe`
-2. A console window will open showing the server status
-3. The API will be available at `http://localhost:5050`
-4. Press `Ctrl+C` to stop
+### Settings and service
+1. Double-click `EduPrinterSystem.exe` and accept the administrator prompt
+2. Edit the configuration and click **Save** (this writes `config.json` next to the exe)
+3. Click **Install service** to run it in the background on every boot
 
-### Option 2: With Configuration
-1. Copy `EduPrinterSystem.exe` to a folder
-2. Copy `.env` file to the same folder (or create one from `.env.example`)
-3. Edit `.env` to configure:
-   - `PORT` - Server port (default: 5050)
-   - `FRONTEND_URL` - Frontend URL for CORS
-   - Printer settings
-   - School information
-4. Double-click `EduPrinterSystem.exe`
+See [service-install.md](service-install.md).
+
+### Without the service
+Run `EduPrinterSystem.exe serve` to start the print server directly. It has no console window; it logs to `service.log` next to the exe and runs until the process is ended. The API is available at `http://localhost:5050`.
 
 ## Features
 
 - ✅ **Portable** - No installation needed
 - ✅ **Standalone** - All dependencies included
 - ✅ **x64** - Built for 64-bit Windows
-- ✅ **Console window** - Shows server status and logs
-- ✅ **Auto-config** - Finds `.env` file in the same folder as the exe
+- ✅ **Settings window** - Edit the configuration and manage the service
+- ✅ **Auto-config** - Reads `config.json` in the same folder as the exe
 
 ## Requirements
 
@@ -64,27 +54,14 @@ After building, you'll have:
 - This is normal for unsigned executables
 
 ### Port already in use
-- Change the `PORT` in `.env` file
+- Change the port in the settings window
 - Or stop the application using that port
 
 ### Printer not found
 - Ensure printer is connected via USB
-- Check `PRINTER_VENDOR_ID` and `PRINTER_PRODUCT_ID` in `.env`
-- Run as Administrator if needed
+- Check the printer vendor and product IDs in the settings window
+- Look at `service.log` next to the exe for the exact error
 
-### Can't find .env file
-- The exe looks for `.env` in the same folder
-- Create one from `.env.example` if needed
-- Default values will be used if `.env` is missing
-
-## File Structure
-
-```
-YourFolder/
-├── EduPrinterSystem.exe  (The portable executable)
-├── .env                  (Optional - configuration)
-└── logo.png              (Optional - if needed)
-```
-
-That's it! Just drag and drop the `.exe` anywhere and run it.
-
+### No config.json
+- Default values are used until one is saved
+- The settings window creates it on Save

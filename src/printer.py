@@ -1,9 +1,10 @@
-import os
 from contextlib import closing
-from typing import Any, TypedDict, List, Optional, Union
+from typing import Any, Dict, TypedDict, List, Optional, Union
 from escpos.printer import Usb
 from escpos.exceptions import USBNotFoundError
 from datetime import datetime
+
+import config
 
 PRINT_WIDTH_DOTS = 384
 MAX_LINE_WIDTH = 32
@@ -60,15 +61,6 @@ def format_currency(amount: float) -> str:
     whole = f"{millions:,}".replace(",", " ")
     return f"{sign}{whole}{',' + decimals if decimals else ''}M"
 
-def translate_payment_method(method_id: int) -> str:
-    methods = {
-        1: "Especes",
-        2: "MVola",
-        3: "Airtel Money",
-        4: "Orange Money"
-    }
-    return methods.get(method_id, f"Methode {method_id}")
-
 def wrap_text(text: str, max_width: int) -> List[str]:
     words = text.split()
     lines = []
@@ -117,9 +109,11 @@ def format_designation_amount(designation: str, amount: str) -> str:
             result += f"{line}\n"
         return result.rstrip()
 
-def generate_invoice_string(data: Invoice) -> str:
-    school_name = os.getenv("SCHOOL_NAME", "INSTITUTION MARTHE HERVEE")
-    school_phone = os.getenv("SCHOOL_PHONE", "+261 034 08 040 83")
+def generate_invoice_string(data: Invoice, settings: Optional[Dict[str, Any]] = None) -> str:
+    if settings is None:
+        settings = config.load()
+    school_name = settings["schoolName"]
+    school_phone = settings["schoolPhone"]
     
     lines = []
     
@@ -155,7 +149,7 @@ def generate_invoice_string(data: Invoice) -> str:
     lines.append(f"{'TOTAL':<{designation_width}} {total_str}")
     lines.append("-" * MAX_LINE_WIDTH)
     
-    lines.append(os.getenv("INVOICE_FOOTER", "Jesus, mon maitre souverain."))
+    lines.append(settings["invoiceFooter"])
     
     while lines and not lines[-1].strip():
         lines.pop()
@@ -204,12 +198,14 @@ def open_printer(vendor_id: int, product_id: int) -> Usb:
     return Usb(vendor_id, product_id)
 
 def pos_print(data: Invoice, duplication: int = 2) -> None:
-    vendor_id = int(os.getenv("PRINTER_VENDOR_ID", "0x28E9"), 16)
-    product_id = int(os.getenv("PRINTER_PRODUCT_ID", "0x0289"), 16)
+    # Read on every print, so saved settings apply without a restart.
+    settings = config.load()
+    vendor_id = config.parse_usb_id(settings["printerVendorId"])
+    product_id = config.parse_usb_id(settings["printerProductId"])
     # Usb keeps a reference cycle, so GC may not free it before the next
     # request; closing() releases the USB interface deterministically.
     with closing(open_printer(vendor_id, product_id)) as p:
-        invoice_string = generate_invoice_string(data)
+        invoice_string = generate_invoice_string(data, settings)
         for i in range(duplication):
             p.text(invoice_string)
             if i < duplication - 1:

@@ -56,7 +56,6 @@ cython_debug/
 venv_build/
 build/
 dist/
-installer/
 *.spec.bak
 service.log
 service_error.log

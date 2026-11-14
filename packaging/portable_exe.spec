@@ -26,10 +26,19 @@ a = Analysis(
     pathex=[SRC],
     binaries=[],
     datas=[
-        (os.path.join(ROOT, 'assets', 'logo.png'), '.'),
+        # Service host, copied next to the exe when the service is installed.
+        (os.path.join(ROOT, 'vendor', 'nssm-2.24', 'win64', 'nssm.exe'), '.'),
     ] + escpos_data_files,
     hiddenimports=[
         'pkg_resources',
+        'config',
+        'gui',
+        'service_manager',
+        'tkinter',
+        'pywintypes',
+        'win32service',
+        'win32serviceutil',
+        'win32timezone',
         'flask',
         'flask_cors',
         'dotenv',
@@ -76,7 +85,10 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,
+    # Double-clicking opens the settings window, so no console; the server
+    # logs to service.log instead. Installing a service needs elevation.
+    console=False,
+    uac_admin=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch='x86_64',

@@ -1,7 +1,7 @@
-import os
 import unittest
 from unittest import mock
 
+import config
 import printer
 from printer import (
     MAX_LINE_WIDTH,
@@ -29,10 +29,14 @@ def make_invoice(**overrides):
     return invoice
 
 
-def render(env=None, **overrides):
-    """Invoice lines, rendered with only the given variables set."""
-    with mock.patch.dict(os.environ, env or {}, clear=True):
-        return generate_invoice_string(make_invoice(**overrides)).split("\n")
+def settings_with(**overrides):
+    return {**config.DEFAULTS, **overrides}
+
+
+def render(settings=None, **overrides):
+    """Invoice lines, rendered with the default settings plus `settings`."""
+    invoice = make_invoice(**overrides)
+    return generate_invoice_string(invoice, settings_with(**(settings or {}))).split("\n")
 
 
 class FormatCurrencyTest(unittest.TestCase):
@@ -123,31 +127,31 @@ class InvoiceLayoutTest(unittest.TestCase):
         self.assertEqual(len(total), MAX_LINE_WIDTH)
 
 
-class InvoiceEnvTest(unittest.TestCase):
+class InvoiceSettingsTest(unittest.TestCase):
     def test_default_header_and_footer(self):
         lines = render()
         self.assertEqual(lines[0], "INSTITUTION MARTHE HERVEE")
         self.assertEqual(lines[1], "+261 034 08 040 83")
         self.assertEqual(lines[-1], "Jesus, mon maitre souverain.")
 
-    def test_header_comes_from_env(self):
-        lines = render({"SCHOOL_NAME": "Ecole Test", "SCHOOL_PHONE": "034 00 000 00"})
+    def test_header_comes_from_settings(self):
+        lines = render({"schoolName": "Ecole Test", "schoolPhone": "034 00 000 00"})
         self.assertEqual(lines[0], "ECOLE TEST")
         self.assertEqual(lines[1], "034 00 000 00")
 
-    def test_footer_comes_from_env(self):
-        lines = render({"INVOICE_FOOTER": "Merci et a bientot."})
+    def test_footer_comes_from_settings(self):
+        lines = render({"invoiceFooter": "Merci et a bientot."})
         self.assertEqual(lines[-1], "Merci et a bientot.")
         self.assertNotIn("Jesus, mon maitre souverain.", lines)
 
     def test_empty_footer_prints_no_footer_line(self):
-        lines = render({"INVOICE_FOOTER": ""})
+        lines = render({"invoiceFooter": ""})
         self.assertEqual(lines[-1], "-" * MAX_LINE_WIDTH)
 
 
 class PosPrintTest(unittest.TestCase):
-    def run_print(self, device, **kwargs):
-        with mock.patch.dict(os.environ, {}, clear=True), \
+    def run_print(self, device, settings=None, **kwargs):
+        with mock.patch.object(config, "load", return_value=settings_with(**(settings or {}))), \
                 mock.patch.object(printer, "open_printer", return_value=device) as opener:
             pos_print(make_invoice(), **kwargs)
         return opener
@@ -155,8 +159,7 @@ class PosPrintTest(unittest.TestCase):
     def test_prints_two_copies_by_default_with_one_cut(self):
         device = mock.Mock()
         self.run_print(device)
-        with mock.patch.dict(os.environ, {}, clear=True):
-            invoice = generate_invoice_string(make_invoice())
+        invoice = generate_invoice_string(make_invoice(), settings_with())
         printed = [call.args[0] for call in device.text.call_args_list]
         self.assertEqual(printed, [invoice, "\n" + "=" * MAX_LINE_WIDTH + "\n", invoice])
         device.cut.assert_called_once_with()
@@ -179,13 +182,16 @@ class PosPrintTest(unittest.TestCase):
             self.run_print(device)
         device.close.assert_called_once_with()
 
-    def test_printer_ids_come_from_env(self):
-        device = mock.Mock()
-        env = {"PRINTER_VENDOR_ID": "0x1234", "PRINTER_PRODUCT_ID": "0xABCD"}
-        with mock.patch.dict(os.environ, env, clear=True), \
-                mock.patch.object(printer, "open_printer", return_value=device) as opener:
-            pos_print(make_invoice())
+    def test_printer_ids_come_from_settings(self):
+        opener = self.run_print(
+            mock.Mock(), {"printerVendorId": "0x1234", "printerProductId": "0xABCD"}
+        )
         opener.assert_called_once_with(0x1234, 0xABCD)
+
+    def test_footer_setting_reaches_the_paper(self):
+        device = mock.Mock()
+        self.run_print(device, {"invoiceFooter": "Merci."}, duplication=1)
+        self.assertTrue(device.text.call_args.args[0].endswith("\nMerci."))
 
 
 class OpenPrinterTest(unittest.TestCase):

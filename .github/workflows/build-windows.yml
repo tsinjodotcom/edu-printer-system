@@ -32,8 +32,7 @@ jobs:
       # (missing bundled modules) that a successful PyInstaller run hides.
       - name: Smoke test executable
         run: |
-          $p = Start-Process -FilePath dist\EduPrinterSystem.exe -PassThru `
-                 -RedirectStandardOutput out.log -RedirectStandardError err.log
+          $p = Start-Process -FilePath dist\EduPrinterSystem.exe -ArgumentList serve -PassThru
           $ok = $false
           $body = $null
           foreach ($i in 1..30) {
@@ -44,9 +43,8 @@ jobs:
               if ($r.StatusCode -eq 200) { $body = $r.Content | ConvertFrom-Json; $ok = $true; break }
             } catch { }
           }
-          if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
-          Write-Host "--- stdout ---"; Get-Content out.log -ErrorAction SilentlyContinue
-          Write-Host "--- stderr ---"; Get-Content err.log -ErrorAction SilentlyContinue
+          Get-Process EduPrinterSystem -ErrorAction SilentlyContinue | Stop-Process -Force
+          Write-Host "--- service.log ---"; Get-Content dist\service.log -ErrorAction SilentlyContinue
           if (-not $ok) { throw "Executable did not serve GET / on port 5050" }
           Write-Host "Health response: $($body | ConvertTo-Json -Compress)"
           # No printer is attached here, but the bundled libusb must still load.
@@ -55,10 +53,44 @@ jobs:
           }
           Write-Host "Smoke test passed: health 200, usb backend = $($body.usbBackend)"
 
-      - name: Stage runtime files
+      # Double-clicking the exe must open the settings window and stay open.
+      - name: Smoke test settings window
         run: |
-          copy assets\logo.png dist\
-          if (Test-Path .env.example) { copy .env.example dist\ }
+          Start-Process -FilePath dist\EduPrinterSystem.exe
+          $title = $null
+          foreach ($i in 1..30) {
+            Start-Sleep -Seconds 1
+            $title = (Get-Process EduPrinterSystem -ErrorAction SilentlyContinue |
+                      Where-Object { $_.MainWindowTitle }).MainWindowTitle
+            if ($title) { break }
+          }
+          Get-Process EduPrinterSystem -ErrorAction SilentlyContinue | Stop-Process -Force
+          if ($title -ne "Edu Printer System") { throw "Settings window did not open (title: '$title')" }
+          Write-Host "Smoke test passed: window '$title' opened"
+
+      # Installs the real Windows service from the exe, as the Install button does.
+      - name: Smoke test service install and uninstall
+        run: |
+          '{"port": 5051}' | Set-Content dist\config.json -Encoding ascii
+          $p = Start-Process -FilePath dist\EduPrinterSystem.exe -ArgumentList install -PassThru -Wait
+          if ($p.ExitCode -ne 0) { throw "install exited with code $($p.ExitCode)" }
+          $ok = $false
+          foreach ($i in 1..30) {
+            Start-Sleep -Seconds 1
+            try {
+              $r = Invoke-WebRequest -Uri http://127.0.0.1:5051/ -UseBasicParsing -TimeoutSec 2
+              if ($r.StatusCode -eq 200) { $ok = $true; break }
+            } catch { }
+          }
+          sc.exe qc EduPrinterService
+          Write-Host "--- service.log ---"; Get-Content dist\service.log -ErrorAction SilentlyContinue
+          $state = (Get-Service EduPrinterService).Status
+          $p = Start-Process -FilePath dist\EduPrinterSystem.exe -ArgumentList uninstall -PassThru -Wait
+          if (-not $ok) { throw "Service (state: $state) did not serve GET / on the configured port 5051" }
+          if ($p.ExitCode -ne 0) { throw "uninstall exited with code $($p.ExitCode)" }
+          if (Get-Service EduPrinterService -ErrorAction SilentlyContinue) { throw "Service still exists after uninstall" }
+          Remove-Item dist\config.json, dist\service.log*, dist\nssm.exe -ErrorAction SilentlyContinue
+          Write-Host "Smoke test passed: service installed, served on port 5051, uninstalled"
 
       - name: Upload executable
         uses: actions/upload-artifact@v4
