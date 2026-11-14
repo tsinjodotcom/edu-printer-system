@@ -149,6 +149,36 @@ class InvoiceLayoutTest(unittest.TestCase):
             text = generate_invoice_string(make_invoice(), settings_with())
         self.assertIn("\nImprime le: 02/01/2027 08:05\n", text)
 
+    def test_layout_adapts_to_80mm_paper(self):
+        elements = [
+            {"description": "Frais d'inscription et fournitures scolaires de l'annee", "amount": 987654},
+            {"description": "Cantine", "amount": 40000},
+        ]
+        for width in (42, 48):
+            with self.subTest(width=width):
+                lines = render({"lineWidth": width, "schoolAddress": "Lot 12 Bis, Rue de l'Independance, Antananarivo 101"},
+                               clientName=LONG_NAME, elements=elements)
+                self.assertTrue(all(len(line) <= width for line in lines))
+                self.assertEqual(lines.count("-" * width), 5)
+                self.assertNotIn("-" * (width + 1), "\n".join(lines))
+                header = next(line for line in lines if line.startswith("DESIGNATION"))
+                self.assertEqual(header, "DESIGNATION" + " " * (width - 19) + "MONTANT")
+                for start in ("Frais", "Cantine", "TOTAL"):
+                    amount_line = next(line for line in lines if line.startswith(start))
+                    self.assertEqual(len(amount_line), width)
+                self.assertTrue(next(line for line in lines if line.startswith("TOTAL")).endswith(" 1,027654M"))
+
+    def test_wider_paper_wraps_less(self):
+        narrow = render({"lineWidth": 32}, clientName=LONG_NAME)
+        wide = render({"lineWidth": 48}, clientName=LONG_NAME)
+        self.assertLess(len(wide), len(narrow))
+        self.assertIn("CLIENT..: RAKOTONDRAZAKA Andriamihaja Tsiory", wide)
+
+    def test_default_width_is_unchanged(self):
+        lines = render()
+        self.assertEqual(max(len(line) for line in lines), 32)
+        self.assertIn("DESIGNATION             MONTANT", lines)
+
     def test_payee_le_is_omitted_without_paid_date(self):
         lines = render(paidDate=None)
         self.assertFalse(any(line.startswith("PAYEE LE") for line in lines))
@@ -252,6 +282,11 @@ class PosPrintTest(unittest.TestCase):
             self.printed({"copies": 3}),
             [invoice, separator, invoice, separator, invoice, "CUT"],
         )
+
+    def test_separator_between_copies_follows_the_paper_width(self):
+        printed = self.printed({"lineWidth": 48, "copies": 2})
+        self.assertEqual(printed[1], "\n" + "=" * 48 + "\n")
+        self.assertIn("-" * 48, printed[0])
 
     def test_cutter_cuts_after_each_copy_without_separator(self):
         invoice = generate_invoice_string(make_invoice(), settings_with())

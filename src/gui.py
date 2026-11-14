@@ -1,6 +1,7 @@
 """Settings and service window, shown when the exe is started without arguments."""
 import os
 import queue
+import re
 import subprocess
 import sys
 import threading
@@ -49,7 +50,29 @@ SAMPLE_INVOICE = {
     ],
 }
 TEST_INVOICE = dict(SAMPLE_INVOICE, invoiceNumber="TEST", clientName="Ticket de test")
-CUT_MARK = "- - - - - - - cut - - - - - - -"
+
+# Paper sizes offered in the window, as characters per line.
+PAPER_PRESETS = (
+    (32, "58 mm (32 characters)"),
+    (48, "80 mm (48 characters)"),
+    (42, "80 mm (42 characters)"),
+)
+
+
+def paper_label(line_width: int) -> str:
+    """How a line width is shown in the paper list."""
+    return dict(PAPER_PRESETS).get(line_width, f"Custom ({line_width} characters)")
+
+
+def paper_width(label: object) -> object:
+    """The line width a paper label stands for; the text itself if it has none."""
+    match = re.search(r"\((\d+) characters\)", str(label))
+    return int(match.group(1)) if match else label
+
+
+def cut_mark(line_width: int) -> str:
+    """Line drawn in the preview where the printer cuts."""
+    return f"{' cut ':-^{line_width}}"
 
 
 class Probe(NamedTuple):
@@ -144,17 +167,27 @@ def preview_copies(values: Dict) -> int:
         return 1
 
 
+def preview_line_width(values: Dict) -> int:
+    """Line width to draw: the form's value, kept within what can be saved."""
+    try:
+        width = int(str(values.get("lineWidth", "")).strip())
+    except ValueError:
+        return config.DEFAULTS["lineWidth"]
+    return min(max(width, config.MIN_LINE_WIDTH), config.MAX_LINE_WIDTH)
+
+
 def render_preview(values: Dict) -> str:
     """The paper a print produces with these (possibly unsaved) form values."""
     settings = dict(config.DEFAULTS)
+    width = settings["lineWidth"] = preview_line_width(values)
     for key in ("schoolName", "schoolAddress", "schoolPhone", "schoolEmail", "invoiceFooter"):
         settings[key] = str(values.get(key, "")).strip()
     copies = preview_copies(values)
     ticket = printer.generate_invoice_string(SAMPLE_INVOICE, settings, datetime.now())
     if values.get("hasCutter"):
-        return "\n".join([ticket, CUT_MARK] * copies)
-    separator = "=" * printer.MAX_LINE_WIDTH
-    return f"\n{separator}\n".join([ticket] * copies) + f"\n{CUT_MARK}"
+        return "\n".join([ticket, cut_mark(width)] * copies)
+    separator = "=" * width
+    return f"\n{separator}\n".join([ticket] * copies) + f"\n{cut_mark(width)}"
 
 
 def open_path(path: str) -> None:
@@ -283,6 +316,14 @@ class App:
         ttk.Label(ids, text="product").grid(row=0, column=3, padx=(4, 0))
         row += 1
 
+        ttk.Label(form, text="Paper width").grid(row=row, column=0, sticky="w", pady=3)
+        variable = tk.StringVar()
+        self.paper_box = ttk.Combobox(form, textvariable=variable, state="readonly", width=24,
+                                      values=[label for _, label in PAPER_PRESETS])
+        self.paper_box.grid(row=row, column=1, sticky="w", padx=(10, 0), pady=3)
+        self._register("lineWidth", variable, self.paper_box)
+        row += 1
+
         ttk.Label(form, text="Paper cutter").grid(row=row, column=0, sticky="w", pady=3)
         variable = tk.BooleanVar()
         cutter = ttk.Checkbutton(form, variable=variable)
@@ -378,14 +419,21 @@ class App:
 
     def show_settings(self, settings: Dict) -> None:
         self._loading = True
+        labels = [label for _, label in PAPER_PRESETS]
+        current = paper_label(settings["lineWidth"])
+        self.paper_box.configure(values=labels if current in labels else labels + [current])
         for key, variable in self.entries.items():
             value = settings[key]
+            if key == "lineWidth":
+                value = current
             variable.set(value if isinstance(value, bool) else str(value))
         self._loading = False
         self._on_change()
 
     def form_values(self) -> Dict[str, object]:
-        return {key: variable.get() for key, variable in self.entries.items()}
+        values = {key: variable.get() for key, variable in self.entries.items()}
+        values["lineWidth"] = paper_width(values["lineWidth"])
+        return values
 
     def is_dirty(self) -> bool:
         try:
@@ -402,7 +450,7 @@ class App:
             return
         values = self.form_values()
         text = render_preview(values)
-        self.preview.configure(state="normal")
+        self.preview.configure(state="normal", width=preview_line_width(values))
         self.preview.delete("1.0", "end")
         self.preview.insert("1.0", text)
         self.preview.configure(state="disabled")

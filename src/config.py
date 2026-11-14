@@ -15,6 +15,8 @@ DEFAULTS: Dict[str, Any] = {
     # copies are printed in one strip, separated by a line to tear along.
     "hasCutter": False,
     "copies": 2,
+    # Characters per line: 32 on 58 mm paper, 48 (some models 42) on 80 mm.
+    "lineWidth": 32,
     "schoolName": "ECOLE EXEMPLE",
     # Address and email are printed under the name only when filled in.
     "schoolAddress": "",
@@ -44,6 +46,7 @@ LABELS = {
     "printerProductId": "Printer product ID",
     "hasCutter": "Paper cutter",
     "copies": "Copies per print",
+    "lineWidth": "Paper width",
     "schoolName": "School name",
     "schoolAddress": "School address",
     "schoolPhone": "School phone",
@@ -53,6 +56,8 @@ LABELS = {
 
 
 MAX_COPIES = 5
+MIN_LINE_WIDTH = 24
+MAX_LINE_WIDTH = 64
 
 
 class ConfigError(Exception):
@@ -117,6 +122,16 @@ def validate(raw: Mapping[str, Any]) -> Dict[str, Any]:
     if not 1 <= copies <= MAX_COPIES:
         raise ConfigError(f"{LABELS['copies']} must be a number between 1 and {MAX_COPIES}.")
     settings["copies"] = copies
+
+    try:
+        line_width = int(str(settings["lineWidth"]).strip())
+    except ValueError:
+        line_width = 0
+    if not MIN_LINE_WIDTH <= line_width <= MAX_LINE_WIDTH:
+        raise ConfigError(
+            f"{LABELS['lineWidth']} must be between {MIN_LINE_WIDTH} and {MAX_LINE_WIDTH} characters."
+        )
+    settings["lineWidth"] = line_width
 
     for key in ("frontendUrl", "schoolName", "schoolAddress", "schoolPhone", "schoolEmail", "invoiceFooter"):
         settings[key] = str(settings[key]).strip()

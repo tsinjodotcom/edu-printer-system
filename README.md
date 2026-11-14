@@ -1,6 +1,6 @@
 # Edu Printer System
 
-A small local HTTP service that prints school invoices on a USB thermal (ESC/POS) receipt printer. A web frontend sends the invoice as JSON to `POST /print`; the service formats it for 32-character paper and prints it, two copies by default.
+A small local HTTP service that prints school invoices on a USB thermal (ESC/POS) receipt printer. A web frontend sends the invoice as JSON to `POST /print`; the service lays it out for the configured paper width (58 mm by default) and prints it, two copies by default.
 
 It runs on Windows x64 as a single executable, `EduPrinterSystem.exe`. Double-clicking it opens a window that shows the state of the service, installs it, and edits the settings with a live preview of the ticket; no other file needs to be copied.
 
@@ -35,6 +35,7 @@ Settings live in `config.json`, in the same folder as the exe. The window create
   "printerProductId": "0x0289",
   "hasCutter": false,
   "copies": 2,
+  "lineWidth": 32,
   "schoolName": "ECOLE EXEMPLE",
   "schoolAddress": "",
   "schoolPhone": "+261 00 00 000 00",
@@ -50,6 +51,7 @@ Settings live in `config.json`, in the same folder as the exe. The window create
 | `printerVendorId`, `printerProductId` | USB IDs of the printer, in hexadecimal. |
 | `hasCutter` | Whether the printer cuts the paper. `true`: each copy is cut off as its own ticket. `false`: the copies are printed in one strip, separated by a line of `=` to tear along. |
 | `copies` | Copies printed per request, 1 to 5. |
+| `lineWidth` | Characters per line, which sets the paper size: 32 for 58 mm paper, 48 for 80 mm (42 on some models). The whole invoice is laid out to this width. |
 | `schoolName` | First line of the invoice, printed in capitals. |
 | `schoolAddress`, `schoolPhone`, `schoolEmail` | Printed under the name, in that order. An empty one is left out. |
 | `invoiceFooter` | Last line of the invoice. Leave it empty to print none. |

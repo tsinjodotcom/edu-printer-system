@@ -122,13 +122,13 @@ class PreviewTest(unittest.TestCase):
     def test_one_strip_with_separator_and_final_cut(self):
         text = gui.render_preview(self.values(copies="2"))
         self.assertEqual(text.count("=" * 32), 1)
-        self.assertEqual(text.count(gui.CUT_MARK), 1)
-        self.assertTrue(text.endswith(gui.CUT_MARK))
+        self.assertEqual(text.count(" cut "), 1)
+        self.assertTrue(text.endswith(gui.cut_mark(32)))
         self.assertEqual(text.count("FACTURE.:"), 2)
 
     def test_cutter_shows_a_cut_after_each_copy(self):
         text = gui.render_preview(self.values(copies="3", hasCutter=True))
-        self.assertEqual(text.count(gui.CUT_MARK), 3)
+        self.assertEqual(text.count(" cut "), 3)
         self.assertNotIn("=" * 32, text)
 
     def test_unsaved_header_and_footer_are_shown(self):
@@ -141,6 +141,21 @@ class PreviewTest(unittest.TestCase):
             with self.subTest(copies=bad):
                 self.assertIn("FACTURE.:", gui.render_preview(self.values(copies=bad)))
         self.assertEqual(gui.preview_copies({"copies": "99"}), config.MAX_COPIES)
+
+    def test_preview_follows_the_paper_width(self):
+        for width in (32, 42, 48):
+            with self.subTest(width=width):
+                lines = gui.render_preview(self.values(lineWidth=width, copies="2")).split("\n")
+                self.assertEqual(max(len(line) for line in lines), width)
+                self.assertIn("=" * width, lines)
+                self.assertEqual(len(lines[-1]), width)
+
+    def test_paper_labels(self):
+        self.assertEqual(gui.paper_label(32), "58 mm (32 characters)")
+        self.assertEqual(gui.paper_label(48), "80 mm (48 characters)")
+        self.assertEqual(gui.paper_label(40), "Custom (40 characters)")
+        for width in (32, 42, 48, 40):
+            self.assertEqual(gui.paper_width(gui.paper_label(width)), width)
 
     def test_lines_fit_the_paper(self):
         text = gui.render_preview(self.values(hasCutter=True))
@@ -418,7 +433,7 @@ class WindowTest(unittest.TestCase):
         app.entries["hasCutter"].set(True)
         app.entries["copies"].set("1")
         self.assertTrue(self.preview_text(app).startswith("ECOLE TEST\n"))
-        self.assertEqual(self.preview_text(app).count(gui.CUT_MARK), 1)
+        self.assertEqual(self.preview_text(app).count(" cut "), 1)
         self.assertEqual(app.preview_note.get(), "1 separate ticket")
 
     def test_address_and_email_are_editable_previewed_and_saved(self):
@@ -432,6 +447,26 @@ class WindowTest(unittest.TestCase):
         app.save_button.invoke()
         self.assertEqual(self.saved_file()["schoolAddress"], "Lot 12, Antananarivo")
         self.assertEqual(self.saved_file()["schoolEmail"], "contact@ecole.test")
+
+    def test_paper_width_is_chosen_from_a_list_and_saved(self):
+        app = self.open_window()
+        self.assertEqual(app.entries["lineWidth"].get(), "58 mm (32 characters)")
+        self.assertEqual(list(app.paper_box.cget("values")),
+                         ["58 mm (32 characters)", "80 mm (48 characters)", "80 mm (42 characters)"])
+        app.entries["lineWidth"].set("80 mm (48 characters)")
+        self.assertEqual(app.form_values()["lineWidth"], 48)
+        self.assertEqual(max(len(line) for line in self.preview_text(app).split("\n")), 48)
+        self.assertEqual(int(app.preview.cget("width")), 48)
+        app.save_button.invoke()
+        self.assertEqual(self.saved_file()["lineWidth"], 48)
+        self.assertEqual(self.operations, [])
+
+    def test_custom_paper_width_from_the_file_is_kept(self):
+        config.save({"lineWidth": 40})
+        app = self.open_window()
+        self.assertEqual(app.entries["lineWidth"].get(), "Custom (40 characters)")
+        self.assertIn("Custom (40 characters)", app.paper_box.cget("values"))
+        self.assertFalse(self.enabled(app.save_button))
 
     def test_save_creates_the_config_file_from_the_form(self):
         app = self.open_window()

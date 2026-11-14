@@ -7,6 +7,7 @@ from datetime import datetime
 import config
 
 PRINT_WIDTH_DOTS = 384
+# Characters per line on 58 mm paper; the lineWidth setting overrides it.
 MAX_LINE_WIDTH = 32
 
 class InvoiceElement(TypedDict):
@@ -99,9 +100,9 @@ def wrap_text(text: str, max_width: int) -> List[str]:
     
     return lines if lines else [""]
 
-def format_label_value(label: str, value: str) -> str:
+def format_label_value(label: str, value: str, width: int = MAX_LINE_WIDTH) -> str:
     label_width = 10
-    value_width = MAX_LINE_WIDTH - label_width
+    value_width = width - label_width
     dots_needed = max(0, label_width - len(label) - 2)
     label_part = f"{label}{'.' * dots_needed}: "
     
@@ -114,9 +115,9 @@ def format_label_value(label: str, value: str) -> str:
             result += f"{line}\n"
         return result.rstrip()
 
-def format_designation_amount(designation: str, amount: str) -> str:
+def format_designation_amount(designation: str, amount: str, width: int = MAX_LINE_WIDTH) -> str:
     amount_width = len(amount)
-    designation_width = MAX_LINE_WIDTH - amount_width - 1
+    designation_width = width - amount_width - 1
     
     designation_lines = wrap_text(designation, designation_width)
     
@@ -135,47 +136,48 @@ def generate_invoice_string(
 ) -> str:
     if settings is None:
         settings = config.load()
+    width = settings.get("lineWidth", MAX_LINE_WIDTH)
+    rule = "-" * width
     lines = []
 
     # Header: name, then address, phone and email, each only if filled in.
     lines.append(settings["schoolName"].upper())
     if settings["schoolAddress"]:
-        lines.extend(wrap_text(settings["schoolAddress"], MAX_LINE_WIDTH))
+        lines.extend(wrap_text(settings["schoolAddress"], width))
     if settings["schoolPhone"]:
         lines.append(settings["schoolPhone"])
     if settings["schoolEmail"]:
         lines.append(settings["schoolEmail"])
-    lines.append("-" * MAX_LINE_WIDTH)
+    lines.append(rule)
     
-    lines.append(format_label_value("FACTURE", data['invoiceNumber']))
+    lines.append(format_label_value("FACTURE", data['invoiceNumber'], width))
     
-    client_line = format_label_value("CLIENT", data['clientName'])
+    client_line = format_label_value("CLIENT", data['clientName'], width)
     lines.append(client_line)
     
     if data['paidDate']:
-        date_line = format_label_value("PAYEE LE", format_date(data['paidDate']))
+        date_line = format_label_value("PAYEE LE", format_date(data['paidDate']), width)
         lines.append(date_line)
 
-    lines.append(format_label_value("PAYE PAR", payment_methods(data)))
+    lines.append(format_label_value("PAYE PAR", payment_methods(data), width))
     
-    lines.append("-" * MAX_LINE_WIDTH)
-    designation_header_width = 24
-    lines.append(f"{'DESIGNATION':<{designation_header_width}}MONTANT")
-    lines.append("-" * MAX_LINE_WIDTH)
+    lines.append(rule)
+    lines.append(f"{'DESIGNATION':<{width - 8}}MONTANT")
+    lines.append(rule)
     
     total = 0.0
     for element in data['elements']:
         desc = element['description']
         amount = element['amount']
         total += amount
-        lines.append(format_designation_amount(desc, format_currency(amount)))
+        lines.append(format_designation_amount(desc, format_currency(amount), width))
     
-    lines.append("-" * MAX_LINE_WIDTH)
+    lines.append(rule)
     total_str = format_currency(total)
     total_width = len(total_str)
-    designation_width = MAX_LINE_WIDTH - total_width - 1
+    designation_width = width - total_width - 1
     lines.append(f"{'TOTAL':<{designation_width}} {total_str}")
-    lines.append("-" * MAX_LINE_WIDTH)
+    lines.append(rule)
     
     printed_at = printed_at or datetime.now()
     lines.append(f"Imprime le: {printed_at.strftime('%d/%m/%Y %H:%M')}")
@@ -270,6 +272,6 @@ def pos_print(data: Invoice) -> None:
             for i in range(copies):
                 p.text(invoice_string)
                 if i < copies - 1:
-                    p.text("\n" + "=" * MAX_LINE_WIDTH + "\n")
+                    p.text("\n" + "=" * settings["lineWidth"] + "\n")
             p.cut()
 

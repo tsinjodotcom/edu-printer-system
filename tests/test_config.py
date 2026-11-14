@@ -159,6 +159,16 @@ class ValidateTest(unittest.TestCase):
                 config.validate({"copies": bad})
             self.assertIn("Copies", str(caught.exception))
 
+    def test_line_width_defaults_to_58mm_paper(self):
+        self.assertEqual(config.DEFAULTS["lineWidth"], 32)
+        self.assertEqual(config.validate({"lineWidth": " 48 "})["lineWidth"], 48)
+
+    def test_line_width_must_be_between_24_and_64(self):
+        for bad in ("", "wide", "23", "65", "0"):
+            with self.subTest(line_width=bad), self.assertRaises(config.ConfigError) as caught:
+                config.validate({"lineWidth": bad})
+            self.assertIn("Paper width", str(caught.exception))
+
     def test_has_cutter_must_be_a_boolean(self):
         self.assertIs(config.validate({"hasCutter": True})["hasCutter"], True)
         for bad in ("true", 1, None):
