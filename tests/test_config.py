@@ -71,6 +71,18 @@ class ConfigFileTest(unittest.TestCase):
         self.assertEqual(saved["printerVendorId"], "0x4B43")
         self.assertEqual(saved["invoiceFooter"], "")
 
+    def test_cutter_and_copies_round_trip_as_json_types(self):
+        config.save({"hasCutter": True, "copies": "1"})
+        on_disk = self.read_config()
+        self.assertIs(on_disk["hasCutter"], True)
+        self.assertEqual(on_disk["copies"], 1)
+        self.assertEqual(config.load()["hasCutter"], True)
+
+    def test_config_written_before_these_settings_keeps_todays_printing(self):
+        self.write("config.json", json.dumps({"port": 5050, "schoolName": "Ecole"}))
+        settings = config.load()
+        self.assertEqual((settings["hasCutter"], settings["copies"]), (False, 2))
+
     def test_save_overwrites_an_existing_file(self):
         config.save({"schoolName": "Premier"})
         config.save({"schoolName": "Second"})
@@ -124,6 +136,23 @@ class ValidateTest(unittest.TestCase):
         for bad in ("", "printer", "0x1FFFF", "-1"):
             with self.subTest(usb_id=bad), self.assertRaises(config.ConfigError):
                 config.validate({"printerVendorId": bad})
+
+    def test_default_is_two_copies_on_one_strip(self):
+        self.assertEqual(config.DEFAULTS["copies"], 2)
+        self.assertIs(config.DEFAULTS["hasCutter"], False)
+
+    def test_copies_must_be_between_1_and_5(self):
+        self.assertEqual(config.validate({"copies": " 3 "})["copies"], 3)
+        for bad in ("", "0", "6", "two", "1.5", "-1"):
+            with self.subTest(copies=bad), self.assertRaises(config.ConfigError) as caught:
+                config.validate({"copies": bad})
+            self.assertIn("Copies", str(caught.exception))
+
+    def test_has_cutter_must_be_a_boolean(self):
+        self.assertIs(config.validate({"hasCutter": True})["hasCutter"], True)
+        for bad in ("true", 1, None):
+            with self.subTest(value=bad), self.assertRaises(config.ConfigError):
+                config.validate({"hasCutter": bad})
 
     def test_frontend_url_is_required(self):
         with self.assertRaises(config.ConfigError):

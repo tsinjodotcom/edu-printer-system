@@ -1,8 +1,8 @@
 # Edu Printer System
 
-A small local HTTP service that prints school invoices on a USB thermal (ESC/POS) receipt printer. A web frontend sends the invoice as JSON to `POST /print`; the service formats it for 32-character paper and prints two copies.
+A small local HTTP service that prints school invoices on a USB thermal (ESC/POS) receipt printer. A web frontend sends the invoice as JSON to `POST /print`; the service formats it for 32-character paper and prints it, two copies by default.
 
-It runs on Windows x64 as a single executable, `EduPrinterSystem.exe`. Double-clicking it opens a window to edit the settings and to install it as a Windows service; no other file needs to be copied.
+It runs on Windows x64 as a single executable, `EduPrinterSystem.exe`. Double-clicking it opens a window that shows the state of the service, installs it, and edits the settings with a live preview of the ticket; no other file needs to be copied.
 
 ## Download
 
@@ -12,14 +12,14 @@ Windows SmartScreen warns about the exe because it is unsigned: choose "More inf
 
 ## Setup on the printing PC
 
-1. Plug in the printer and install the libusbK driver for it with [Zadig](https://zadig.akeo.ie/).
-2. Find the printer's vendor and product IDs (for example with [USBDeview](https://www.nirsoft.net/utils/usb_devices_view.html)).
-3. Copy `EduPrinterSystem.exe` to a permanent folder, such as `C:\EduPrinterSystem`, and double-click it.
+1. Copy `EduPrinterSystem.exe` to a permanent folder, such as `C:\EduPrinterSystem`, and double-click it.
+2. Plug in the printer and click **Open Zadig** to install its libusbK driver: in Zadig, Options > List All Devices, select the printer, choose libusbK, Install Driver. [Zadig](https://zadig.akeo.ie/) is bundled in the exe, so nothing has to be downloaded; a copy next to the exe or on the PATH is used instead if there is one. This is needed once per PC.
+3. Find the printer's vendor and product IDs. Zadig shows them as "USB ID" for the selected device.
 4. Fill in the configuration and click **Save**.
 5. Click **Install service**. The service starts now and on every boot.
 6. Open `http://localhost:5050/`. It should answer `{"status": "healthy", "usbBackend": "..."}`.
 
-To update, stop the service, replace the exe, and start the service again. If the exe is moved to another folder, click **Reinstall service**.
+To update, stop the service, replace the exe, and start the service again. If the exe is moved to another folder, choose **More > Reinstall service**.
 
 More detail: [docs/service-install.md](docs/service-install.md).
 
@@ -33,9 +33,11 @@ Settings live in `config.json`, in the same folder as the exe. The window create
   "frontendUrl": "http://localhost:3000",
   "printerVendorId": "0x28E9",
   "printerProductId": "0x0289",
-  "schoolName": "INSTITUTION MARTHE HERVEE",
-  "schoolPhone": "+261 034 08 040 83",
-  "invoiceFooter": "Jesus, mon maitre souverain."
+  "hasCutter": false,
+  "copies": 2,
+  "schoolName": "ECOLE EXEMPLE",
+  "schoolPhone": "+261 00 00 000 00",
+  "invoiceFooter": "Merci pour votre confiance."
 }
 ```
 
@@ -44,6 +46,8 @@ Settings live in `config.json`, in the same folder as the exe. The window create
 | `port` | Port the service listens on. |
 | `frontendUrl` | Origin allowed to call the service (CORS). |
 | `printerVendorId`, `printerProductId` | USB IDs of the printer, in hexadecimal. |
+| `hasCutter` | Whether the printer cuts the paper. `true`: each copy is cut off as its own ticket. `false`: the copies are printed in one strip, separated by a line of `=` to tear along. |
+| `copies` | Copies printed per request, 1 to 5. |
 | `schoolName` | First line of the invoice, printed in capitals. |
 | `schoolPhone` | Second line of the invoice. |
 | `invoiceFooter` | Last line of the invoice. Leave it empty to print none. |
@@ -68,12 +72,15 @@ The service writes its log to `service.log` in the same folder.
   "invoiceNumber": "F-2026-0412",
   "clientName": "RAKOTO Jean",
   "paidDate": "2026-11-14T10:30:00",
+  "payments": [{ "methodPaymentId": 1 }],
   "elements": [
     { "description": "Ecolage novembre", "amount": 150000 },
     { "description": "Cantine", "amount": 40000 }
   ]
 }
 ```
+
+The invoice always carries a `PAYE PAR` line saying how the client paid, from `methodPaymentId`: 1 Especes, 2 MVola, 3 Airtel Money, 4 Orange Money. Several payments list each method once; with no payment the line shows `--`.
 
 Amounts above 999 999 are printed in millions (`1 500 000` becomes `1,5M`).
 
@@ -85,12 +92,13 @@ src/              Application code
   gui.py            Settings and service window
   config.py         Reading, validating and writing config.json
   service_manager.py  Installing and controlling the Windows service
+  zadig.py          Opening Zadig, the USB driver installer
   printer.py        Invoice formatting and USB printing
 tests/            Unit tests
 packaging/        PyInstaller spec and hooks, build script
 docs/             Build and installation guides
 standalone-x64/   Released exe for Windows x64
-vendor/           Third-party binary bundled into the exe (NSSM 2.24)
+vendor/           Third-party binaries bundled into the exe (NSSM 2.24, Zadig 2.9)
 .github/          CI workflow that tests and builds the Windows exe
 ```
 

@@ -11,9 +11,13 @@ DEFAULTS: Dict[str, Any] = {
     "frontendUrl": "http://localhost:3000",
     "printerVendorId": "0x28E9",
     "printerProductId": "0x0289",
-    "schoolName": "INSTITUTION MARTHE HERVEE",
-    "schoolPhone": "+261 034 08 040 83",
-    "invoiceFooter": "Jesus, mon maitre souverain.",
+    # With a cutter each copy is cut off as its own ticket; without one the
+    # copies are printed in one strip, separated by a line to tear along.
+    "hasCutter": False,
+    "copies": 2,
+    "schoolName": "ECOLE EXEMPLE",
+    "schoolPhone": "+261 00 00 000 00",
+    "invoiceFooter": "Merci pour votre confiance.",
 }
 
 # Settings used to live in a .env file; these are the names they had there.
@@ -33,10 +37,15 @@ LABELS = {
     "frontendUrl": "Frontend URL",
     "printerVendorId": "Printer vendor ID",
     "printerProductId": "Printer product ID",
+    "hasCutter": "Paper cutter",
+    "copies": "Copies per print",
     "schoolName": "School name",
     "schoolPhone": "School phone",
     "invoiceFooter": "Invoice footer",
 }
+
+
+MAX_COPIES = 5
 
 
 class ConfigError(Exception):
@@ -90,6 +99,17 @@ def validate(raw: Mapping[str, Any]) -> Dict[str, Any]:
                 f"{LABELS[key]} must be a hexadecimal USB ID such as 0x28E9."
             )
         settings[key] = f"0x{usb_id:04X}"
+
+    if not isinstance(settings["hasCutter"], bool):
+        raise ConfigError(f"{LABELS['hasCutter']} must be true or false.")
+
+    try:
+        copies = int(str(settings["copies"]).strip())
+    except ValueError:
+        copies = 0
+    if not 1 <= copies <= MAX_COPIES:
+        raise ConfigError(f"{LABELS['copies']} must be a number between 1 and {MAX_COPIES}.")
+    settings["copies"] = copies
 
     for key in ("frontendUrl", "schoolName", "schoolPhone", "invoiceFooter"):
         settings[key] = str(settings[key]).strip()

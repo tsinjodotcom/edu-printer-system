@@ -61,6 +61,25 @@ def format_currency(amount: float) -> str:
     whole = f"{millions:,}".replace(",", " ")
     return f"{sign}{whole}{',' + decimals if decimals else ''}M"
 
+def translate_payment_method(method_id: int) -> str:
+    methods = {
+        1: "Especes",
+        2: "MVola",
+        3: "Airtel Money",
+        4: "Orange Money"
+    }
+    return methods.get(method_id, f"Methode {method_id}")
+
+def payment_methods(data: Invoice) -> str:
+    """How the client paid: each method once, in payment order; "--" if
+    the invoice carries no payment."""
+    names: List[str] = []
+    for payment in data.get('payments') or []:
+        name = translate_payment_method(payment['methodPaymentId'])
+        if name not in names:
+            names.append(name)
+    return ", ".join(names) if names else "--"
+
 def wrap_text(text: str, max_width: int) -> List[str]:
     words = text.split()
     lines = []
@@ -109,7 +128,11 @@ def format_designation_amount(designation: str, amount: str) -> str:
             result += f"{line}\n"
         return result.rstrip()
 
-def generate_invoice_string(data: Invoice, settings: Optional[Dict[str, Any]] = None) -> str:
+def generate_invoice_string(
+    data: Invoice,
+    settings: Optional[Dict[str, Any]] = None,
+    printed_at: Optional[datetime] = None,
+) -> str:
     if settings is None:
         settings = config.load()
     school_name = settings["schoolName"]
@@ -129,6 +152,8 @@ def generate_invoice_string(data: Invoice, settings: Optional[Dict[str, Any]] = 
     if data['paidDate']:
         date_line = format_label_value("PAYEE LE", format_date(data['paidDate']))
         lines.append(date_line)
+
+    lines.append(format_label_value("PAYE PAR", payment_methods(data)))
     
     lines.append("-" * MAX_LINE_WIDTH)
     designation_header_width = 24
@@ -149,6 +174,8 @@ def generate_invoice_string(data: Invoice, settings: Optional[Dict[str, Any]] = 
     lines.append(f"{'TOTAL':<{designation_width}} {total_str}")
     lines.append("-" * MAX_LINE_WIDTH)
     
+    printed_at = printed_at or datetime.now()
+    lines.append(f"Imprime le: {printed_at.strftime('%d/%m/%Y %H:%M')}")
     lines.append(settings["invoiceFooter"])
     
     while lines and not lines[-1].strip():
@@ -197,7 +224,29 @@ def open_printer(vendor_id: int, product_id: int) -> Usb:
             pass
     return Usb(vendor_id, product_id)
 
-def pos_print(data: Invoice, duplication: int = 2) -> None:
+def printer_connected(vendor_id: int, product_id: int) -> Optional[bool]:
+    """Whether the printer is visible over USB, without opening it.
+
+    Looks through the same backends as open_printer. None means no libusb
+    could be loaded, so nothing can be said.
+    """
+    import usb.core
+
+    searched = False
+    for backend in (get_usb_backend(), None):
+        arguments: Dict[str, Any] = {"idVendor": vendor_id, "idProduct": product_id}
+        if backend is not None:
+            arguments["backend"] = backend
+        try:
+            if usb.core.find(**arguments) is not None:
+                return True
+            searched = True
+        except Exception:
+            # No usable backend this way; the other one may still work.
+            continue
+    return False if searched else None
+
+def pos_print(data: Invoice) -> None:
     # Read on every print, so saved settings apply without a restart.
     settings = config.load()
     vendor_id = config.parse_usb_id(settings["printerVendorId"])
@@ -206,9 +255,18 @@ def pos_print(data: Invoice, duplication: int = 2) -> None:
     # request; closing() releases the USB interface deterministically.
     with closing(open_printer(vendor_id, product_id)) as p:
         invoice_string = generate_invoice_string(data, settings)
-        for i in range(duplication):
-            p.text(invoice_string)
-            if i < duplication - 1:
-                p.text("\n" + "=" * MAX_LINE_WIDTH + "\n")
-        p.cut()
+        copies = settings["copies"]
+        if settings["hasCutter"]:
+            # Each copy leaves the printer as a separate ticket.
+            for _ in range(copies):
+                p.text(invoice_string)
+                p.cut()
+        else:
+            # One strip: a line marks where to tear the copies apart. The
+            # final cut command still feeds the paper past the tear bar.
+            for i in range(copies):
+                p.text(invoice_string)
+                if i < copies - 1:
+                    p.text("\n" + "=" * MAX_LINE_WIDTH + "\n")
+            p.cut()
 

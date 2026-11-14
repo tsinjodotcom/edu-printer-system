@@ -7,7 +7,7 @@ The service is `EduPrinterSystem.exe` itself, run in server mode. It starts on b
 1. Copy `EduPrinterSystem.exe` to a permanent folder, for example `C:\EduPrinterSystem`. The service points at this location, so do not leave the exe in Downloads.
 2. Double-click the exe and accept the administrator prompt.
 3. Check the configuration and click **Save**.
-4. Click **Install service**. The status changes to "Running".
+4. Click **Install service**. The banner turns green: "Service running".
 
 The window can be closed afterwards; the service keeps running.
 
@@ -21,7 +21,7 @@ Installing adds these files next to the exe:
 
 ## Start, stop, uninstall
 
-Use the **Start**, **Stop** and **Uninstall service** buttons in the window. Uninstalling stops the service, removes it, and deletes `nssm.exe`. `config.json` and the log are kept.
+The banner at the top of the window shows the state of the service with a **Start** or **Stop** button; **More > Uninstall service** removes it. Uninstalling stops the service, removes it, and deletes `nssm.exe`. `config.json` and the log are kept.
 
 The service is also visible in `services.msc` as "Edu Printer System Service", and answers to:
 
@@ -47,11 +47,11 @@ Both exit with code 0 on success.
 2. Replace `EduPrinterSystem.exe` with the new one, in the same folder.
 3. Click **Start**.
 
-If the exe moves to another folder, open it from the new location and click **Reinstall service**.
+If the exe moves to another folder, open it from the new location and choose **More > Reinstall service**.
 
 ## Upgrading from the version with install_service.bat
 
-Put the new exe in place of the old one, open it, and click **Reinstall service**: this replaces the old service. The old `install_service.bat`, `uninstall_service.bat` and `.env` are no longer used. An existing `.env` is read until you click Save, which writes its values to `config.json`.
+Put the new exe in place of the old one, open it, and choose **More > Reinstall service**: this replaces the old service. The old `install_service.bat`, `uninstall_service.bat` and `.env` are no longer used. An existing `.env` is read until you click Save, which writes its values to `config.json`.
 
 ## Troubleshooting
 
