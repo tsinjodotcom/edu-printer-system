@@ -3,7 +3,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
 develop-eggs/
 dist/
 downloads/
@@ -54,7 +53,7 @@ cython_debug/
 *~
 
 venv_build/
-build/
+.pyinstaller/
 dist/
 *.spec.bak
 service.log

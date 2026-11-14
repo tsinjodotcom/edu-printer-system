@@ -6,7 +6,7 @@ It runs on Windows x64 as a single executable, `EduPrinterSystem.exe`. Double-cl
 
 ## Download
 
-[`standalone-x64/EduPrinterSystem.exe`](standalone-x64/EduPrinterSystem.exe)
+[`build/EduPrinterSystem.exe`](build/EduPrinterSystem.exe)
 
 Windows SmartScreen warns about the exe because it is unsigned: choose "More info", then "Run anyway". It asks for administrator rights, which installing a service requires.
 
@@ -97,7 +97,7 @@ src/              Application code
 tests/            Unit tests
 packaging/        PyInstaller spec and hooks, build script
 docs/             Build and installation guides
-standalone-x64/   Released exe for Windows x64
+build/            Released exe for Windows x64
 vendor/           Third-party binaries bundled into the exe (NSSM 2.24, Zadig 2.9)
 .github/          CI workflow that tests and builds the Windows exe
 ```
