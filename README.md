@@ -36,7 +36,9 @@ Settings live in `config.json`, in the same folder as the exe. The window create
   "hasCutter": false,
   "copies": 2,
   "schoolName": "ECOLE EXEMPLE",
+  "schoolAddress": "",
   "schoolPhone": "+261 00 00 000 00",
+  "schoolEmail": "",
   "invoiceFooter": "Merci pour votre confiance."
 }
 ```
@@ -49,7 +51,7 @@ Settings live in `config.json`, in the same folder as the exe. The window create
 | `hasCutter` | Whether the printer cuts the paper. `true`: each copy is cut off as its own ticket. `false`: the copies are printed in one strip, separated by a line of `=` to tear along. |
 | `copies` | Copies printed per request, 1 to 5. |
 | `schoolName` | First line of the invoice, printed in capitals. |
-| `schoolPhone` | Second line of the invoice. |
+| `schoolAddress`, `schoolPhone`, `schoolEmail` | Printed under the name, in that order. An empty one is left out. |
 | `invoiceFooter` | Last line of the invoice. Leave it empty to print none. |
 
 A setting missing from the file takes the value shown above. Printer and invoice settings apply to the next print. `port` and `frontendUrl` apply when the service restarts, which the window does on Save.

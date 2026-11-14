@@ -421,6 +421,18 @@ class WindowTest(unittest.TestCase):
         self.assertEqual(self.preview_text(app).count(gui.CUT_MARK), 1)
         self.assertEqual(app.preview_note.get(), "1 separate ticket")
 
+    def test_address_and_email_are_editable_previewed_and_saved(self):
+        app = self.open_window()
+        self.assertEqual((app.form_values()["schoolAddress"], app.form_values()["schoolEmail"]), ("", ""))
+        app.entries["schoolAddress"].set("Lot 12, Antananarivo")
+        app.entries["schoolEmail"].set("contact@ecole.test")
+        preview = self.preview_text(app).split("\n")
+        self.assertEqual(preview[1], "Lot 12, Antananarivo")
+        self.assertEqual(preview[3], "contact@ecole.test")
+        app.save_button.invoke()
+        self.assertEqual(self.saved_file()["schoolAddress"], "Lot 12, Antananarivo")
+        self.assertEqual(self.saved_file()["schoolEmail"], "contact@ecole.test")
+
     def test_save_creates_the_config_file_from_the_form(self):
         app = self.open_window()
         app.entries["schoolName"].set("Ecole Test")

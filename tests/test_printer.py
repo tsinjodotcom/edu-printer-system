@@ -186,6 +186,27 @@ class InvoiceSettingsTest(unittest.TestCase):
         self.assertEqual(lines[1], "+261 00 00 000 00")
         self.assertEqual(lines[-1], "Merci pour votre confiance.")
 
+    def test_address_and_email_are_printed_in_the_header(self):
+        lines = render({
+            "schoolName": "Ecole Test",
+            "schoolAddress": "Lot 12 Bis, Rue de l'Independance, Antananarivo 101",
+            "schoolPhone": "034 00 000 00",
+            "schoolEmail": "contact@ecole.test",
+        })
+        self.assertEqual(lines[:6], [
+            "ECOLE TEST",
+            "Lot 12 Bis, Rue de",
+            "l'Independance, Antananarivo 101",
+            "034 00 000 00",
+            "contact@ecole.test",
+            "-" * MAX_LINE_WIDTH,
+        ])
+        self.assertTrue(all(len(line) <= MAX_LINE_WIDTH for line in lines))
+
+    def test_empty_header_fields_are_left_out(self):
+        lines = render({"schoolAddress": "", "schoolEmail": "", "schoolPhone": ""})
+        self.assertEqual(lines[:2], ["ECOLE EXEMPLE", "-" * MAX_LINE_WIDTH])
+
     def test_header_comes_from_settings(self):
         lines = render({"schoolName": "Ecole Test", "schoolPhone": "034 00 000 00"})
         self.assertEqual(lines[0], "ECOLE TEST")

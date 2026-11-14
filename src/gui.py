@@ -147,7 +147,7 @@ def preview_copies(values: Dict) -> int:
 def render_preview(values: Dict) -> str:
     """The paper a print produces with these (possibly unsaved) form values."""
     settings = dict(config.DEFAULTS)
-    for key in ("schoolName", "schoolPhone", "invoiceFooter"):
+    for key in ("schoolName", "schoolAddress", "schoolPhone", "schoolEmail", "invoiceFooter"):
         settings[key] = str(values.get(key, "")).strip()
     copies = preview_copies(values)
     ticket = printer.generate_invoice_string(SAMPLE_INVOICE, settings, datetime.now())
@@ -299,7 +299,9 @@ class App:
 
         row = self._section(form, row, "Invoice")
         row = self._field(form, row, "School name", "schoolName")
+        row = self._field(form, row, "Address", "schoolAddress")
         row = self._field(form, row, "Phone", "schoolPhone")
+        row = self._field(form, row, "Email", "schoolEmail")
         row = self._field(form, row, "Footer", "invoiceFooter")
 
         row = self._section(form, row, "Connection")
@@ -339,7 +341,7 @@ class App:
         paper = tk.Frame(column, bg="#C9CED6", padx=1, pady=1)
         paper.grid(row=1, column=0, columnspan=2)
         self.preview = tk.Text(
-            paper, width=printer.MAX_LINE_WIDTH, height=24, font=self.font_paper,
+            paper, width=printer.MAX_LINE_WIDTH, height=28, font=self.font_paper,
             bg=PAPER, fg="#111111", relief="flat", padx=12, pady=10, wrap="none",
             highlightthickness=0, cursor="arrow", state="disabled",
         )

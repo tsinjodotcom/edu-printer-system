@@ -16,7 +16,10 @@ DEFAULTS: Dict[str, Any] = {
     "hasCutter": False,
     "copies": 2,
     "schoolName": "ECOLE EXEMPLE",
+    # Address and email are printed under the name only when filled in.
+    "schoolAddress": "",
     "schoolPhone": "+261 00 00 000 00",
+    "schoolEmail": "",
     "invoiceFooter": "Merci pour votre confiance.",
 }
 
@@ -27,7 +30,9 @@ LEGACY_ENV_NAMES = {
     "printerVendorId": "PRINTER_VENDOR_ID",
     "printerProductId": "PRINTER_PRODUCT_ID",
     "schoolName": "SCHOOL_NAME",
+    "schoolAddress": "SCHOOL_ADDRESS",
     "schoolPhone": "SCHOOL_PHONE",
+    "schoolEmail": "SCHOOL_EMAIL",
     "invoiceFooter": "INVOICE_FOOTER",
 }
 
@@ -40,7 +45,9 @@ LABELS = {
     "hasCutter": "Paper cutter",
     "copies": "Copies per print",
     "schoolName": "School name",
+    "schoolAddress": "School address",
     "schoolPhone": "School phone",
+    "schoolEmail": "School email",
     "invoiceFooter": "Invoice footer",
 }
 
@@ -111,7 +118,7 @@ def validate(raw: Mapping[str, Any]) -> Dict[str, Any]:
         raise ConfigError(f"{LABELS['copies']} must be a number between 1 and {MAX_COPIES}.")
     settings["copies"] = copies
 
-    for key in ("frontendUrl", "schoolName", "schoolPhone", "invoiceFooter"):
+    for key in ("frontendUrl", "schoolName", "schoolAddress", "schoolPhone", "schoolEmail", "invoiceFooter"):
         settings[key] = str(settings[key]).strip()
     if not settings["frontendUrl"]:
         raise ConfigError(f"{LABELS['frontendUrl']} is required.")

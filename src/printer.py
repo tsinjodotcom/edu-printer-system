@@ -135,13 +135,16 @@ def generate_invoice_string(
 ) -> str:
     if settings is None:
         settings = config.load()
-    school_name = settings["schoolName"]
-    school_phone = settings["schoolPhone"]
-    
     lines = []
-    
-    lines.append(school_name.upper())
-    lines.append(school_phone)
+
+    # Header: name, then address, phone and email, each only if filled in.
+    lines.append(settings["schoolName"].upper())
+    if settings["schoolAddress"]:
+        lines.extend(wrap_text(settings["schoolAddress"], MAX_LINE_WIDTH))
+    if settings["schoolPhone"]:
+        lines.append(settings["schoolPhone"])
+    if settings["schoolEmail"]:
+        lines.append(settings["schoolEmail"])
     lines.append("-" * MAX_LINE_WIDTH)
     
     lines.append(format_label_value("FACTURE", data['invoiceNumber']))

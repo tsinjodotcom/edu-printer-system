@@ -108,6 +108,17 @@ class ConfigFileTest(unittest.TestCase):
         self.assertEqual(settings["schoolName"], "Ecole Env")
         self.assertEqual(settings["frontendUrl"], config.DEFAULTS["frontendUrl"])
 
+    def test_old_env_address_and_email_are_carried_over(self):
+        self.write(".env", 'SCHOOL_ADDRESS="Lot 12, Antananarivo"\nSCHOOL_EMAIL=contact@ecole.test\n')
+        settings = config.load()
+        self.assertEqual(settings["schoolAddress"], "Lot 12, Antananarivo")
+        self.assertEqual(settings["schoolEmail"], "contact@ecole.test")
+
+    def test_address_and_email_default_to_empty(self):
+        self.assertEqual((config.DEFAULTS["schoolAddress"], config.DEFAULTS["schoolEmail"]), ("", ""))
+        saved = config.save({"schoolAddress": "  Lot 12  ", "schoolEmail": " a@b.c "})
+        self.assertEqual((saved["schoolAddress"], saved["schoolEmail"]), ("Lot 12", "a@b.c"))
+
     def test_config_file_wins_over_old_env_file(self):
         self.write(".env", "PORT=6002\n")
         self.write("config.json", json.dumps({"port": 6003}))
