@@ -140,6 +140,7 @@ Configuration options:
 - `SCHOOL_ADDRESS` - School address
 - `SCHOOL_PHONE` - School phone
 - `SCHOOL_EMAIL` - School email
+- `INVOICE_FOOTER` - Last line printed on the invoice (set to empty to print none)
 
 After changing the `.env` file, restart the service for changes to take effect.
 

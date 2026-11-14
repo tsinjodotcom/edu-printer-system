@@ -49,7 +49,16 @@ def format_date(date_value: Union[str, int, float]) -> str:
         return str(date_value)
 
 def format_currency(amount: float) -> str:
-    return f"{int(amount):,}".replace(",", " ")
+    value = int(amount)
+    if abs(value) <= 999_999:
+        return f"{value:,}".replace(",", " ")
+    # Millions keep every significant digit (1 234 500 -> 1,2345M) so the
+    # abbreviation never changes the amount that was actually paid.
+    millions, remainder = divmod(abs(value), 1_000_000)
+    decimals = f"{remainder:06d}".rstrip("0")
+    sign = "-" if value < 0 else ""
+    whole = f"{millions:,}".replace(",", " ")
+    return f"{sign}{whole}{',' + decimals if decimals else ''}M"
 
 def translate_payment_method(method_id: int) -> str:
     methods = {
@@ -92,7 +101,7 @@ def format_label_value(label: str, value: str) -> str:
         result = f"{label_part}{value_lines[0]}\n"
         for line in value_lines[1:]:
             result += f"{line}\n"
-        return result
+        return result.rstrip()
 
 def format_designation_amount(designation: str, amount: str) -> str:
     amount_width = len(amount)
@@ -124,7 +133,7 @@ def generate_invoice_string(data: Invoice) -> str:
     lines.append(client_line)
     
     if data['paidDate']:
-        date_line = format_label_value("\nPAYEE LE", format_date(data['paidDate']))
+        date_line = format_label_value("PAYEE LE", format_date(data['paidDate']))
         lines.append(date_line)
     
     lines.append("-" * MAX_LINE_WIDTH)
@@ -146,7 +155,7 @@ def generate_invoice_string(data: Invoice) -> str:
     lines.append(f"{'TOTAL':<{designation_width}} {total_str}")
     lines.append("-" * MAX_LINE_WIDTH)
     
-    lines.append("Jesus, mon maitre souverain.")
+    lines.append(os.getenv("INVOICE_FOOTER", "Jesus, mon maitre souverain."))
     
     while lines and not lines[-1].strip():
         lines.pop()
