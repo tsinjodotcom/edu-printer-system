@@ -8,7 +8,8 @@ from printer import pos_print, usb_backend_name
 if getattr(sys, 'frozen', False):
     application_path = os.path.dirname(sys.executable)
 else:
-    application_path = os.path.dirname(os.path.abspath(__file__))
+    # Running from source: .env sits at the project root, one level above src/.
+    application_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 env_path = os.path.join(application_path, '.env')
 load_dotenv(env_path)

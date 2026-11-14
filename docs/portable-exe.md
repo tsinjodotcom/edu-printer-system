@@ -6,7 +6,7 @@ This guide explains how to create a standalone `.exe` file that can be dragged a
 
 1. **Run the build script:**
    ```batch
-   build_portable.bat
+   packaging\build_portable.bat
    ```
 
 2. **Find your executable:**

@@ -4,6 +4,9 @@ echo Building Portable Windows Executable (x64)
 echo ========================================
 echo.
 
+REM Run from the project root, whatever folder this script is started from
+cd /d "%~dp0.."
+
 REM Check if Python is available
 python --version >nul 2>&1
 if errorlevel 1 (
@@ -42,7 +45,7 @@ if errorlevel 1 (
 
 echo Step 5: Building portable executable with PyInstaller...
 echo (This may take a few minutes...)
-pyinstaller portable_exe.spec --clean --noconfirm
+pyinstaller packaging\portable_exe.spec --clean --noconfirm
 if errorlevel 1 (
     echo ERROR: Failed to build executable
     pause
@@ -51,7 +54,7 @@ if errorlevel 1 (
 
 echo Step 6: Copying additional files...
 if not exist dist mkdir dist
-copy logo.png dist\ >nul 2>&1
+copy assets\logo.png dist\ >nul 2>&1
 if exist .env copy .env dist\ >nul 2>&1
 if exist .env.example copy .env.example dist\ >nul 2>&1
 

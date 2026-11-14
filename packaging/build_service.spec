@@ -1,13 +1,19 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
+
 block_cipher = None
 
+# Resolve everything from the project root so the build works from any cwd.
+ROOT = os.path.abspath(os.path.join(SPECPATH, '..'))
+SRC = os.path.join(ROOT, 'src')
+
 a = Analysis(
-    ['service.py'],
-    pathex=[],
+    [os.path.join(SRC, 'service.py')],
+    pathex=[SRC],
     binaries=[],
     datas=[
-        ('logo.png', '.'),
+        (os.path.join(ROOT, 'assets', 'logo.png'), '.'),
     ],
     hiddenimports=[
         'win32timezone',

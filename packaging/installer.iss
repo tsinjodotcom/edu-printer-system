@@ -10,7 +10,7 @@ DefaultDirName={autopf}\EduPrinterSystem
 DefaultGroupName=Edu Printer System
 AllowNoIcons=yes
 LicenseFile=
-OutputDir=installer
+OutputDir=..\installer
 OutputBaseFilename=EduPrinterSystem-Setup-x64
 SetupIconFile=
 Compression=lzma
@@ -27,10 +27,10 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "dist\EduPrinterService.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "dist\logo.png"; DestDir: "{app}"; Flags: ignoreversion
-Source: "dist\.env"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist
-Source: "dist\.env.example"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\EduPrinterService.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\logo.png"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\.env"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist
+Source: "..\dist\.env.example"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\Edu Printer System"; Filename: "{app}\EduPrinterService.exe"

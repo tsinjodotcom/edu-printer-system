@@ -18,12 +18,12 @@ NSSM (Non-Sucking Service Manager) can convert any executable into a Windows ser
 
 Make sure you have built the executable:
 ```batch
-build_portable.bat
+packaging\build_portable.bat
 ```
 
 ### Step 3: Install the Service
 
-1. **Right-click** `install_service.bat`
+1. **Right-click** `install_service.bat` (in `standalone-x64`)
 2. Select **"Run as administrator"**
 3. The script will:
    - Install the service
@@ -44,7 +44,7 @@ Or use Services Manager:
 
 ### Uninstalling the Service
 
-1. **Right-click** `uninstall_service.bat`
+1. **Right-click** `uninstall_service.bat` (in `standalone-x64`)
 2. Select **"Run as administrator"**
 3. The service will be stopped and removed
 

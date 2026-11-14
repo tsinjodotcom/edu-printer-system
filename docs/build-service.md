@@ -16,7 +16,7 @@ This guide explains how to build a Windows x64 installable service for the Edu P
 2. Navigate to the project directory
 3. Run the build script:
    ```batch
-   build_windows.bat
+   packaging\build_windows.bat
    ```
 4. The script will:
    - Create a virtual environment
@@ -39,12 +39,12 @@ This guide explains how to build a Windows x64 installable service for the Edu P
 
 3. Build the executable:
    ```batch
-   pyinstaller build_service.spec --clean
+   pyinstaller packaging\build_service.spec --clean
    ```
 
 4. Copy additional files:
    ```batch
-   copy logo.png dist\
+   copy assets\logo.png dist\
    copy .env dist\  (if exists)
    copy .env.example dist\  (if exists)
    ```
@@ -91,7 +91,7 @@ Before creating the installer, test the service:
 
 3. **Open the installer script:**
    - File → Open
-   - Select `installer.iss`
+   - Select `packaging\installer.iss`
 
 4. **Build the installer:**
    - Build → Compile

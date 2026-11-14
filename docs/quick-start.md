@@ -4,7 +4,7 @@
 
 1. **Run the build script:**
    ```batch
-   build_windows.bat
+   packaging\build_windows.bat
    ```
 
 2. **Test the service (optional):**
@@ -15,7 +15,7 @@
 
 3. **Create installer:**
    - Install Inno Setup: https://jrsoftware.org/isinfo.php
-   - Open `installer.iss` in Inno Setup
+   - Open `packaging\installer.iss` in Inno Setup
    - Build → Compile
    - Installer will be in `installer\` folder
 
@@ -51,5 +51,5 @@ Edit `.env` file in installation directory after installation:
 - Python 3.8+ (64-bit)
 - Administrator privileges for installation
 
-For detailed instructions, see `BUILD_INSTRUCTIONS.md`
+For detailed instructions, see [build-service.md](build-service.md)
 

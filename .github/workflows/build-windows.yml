@@ -26,7 +26,7 @@ jobs:
         run: python -m unittest -v
 
       - name: Build portable executable
-        run: pyinstaller portable_exe.spec --clean --noconfirm
+        run: pyinstaller packaging/portable_exe.spec --clean --noconfirm
 
       # Boots the real exe on real Windows. Catches import-time failures
       # (missing bundled modules) that a successful PyInstaller run hides.
@@ -57,7 +57,7 @@ jobs:
 
       - name: Stage runtime files
         run: |
-          copy logo.png dist\
+          copy assets\logo.png dist\
           if (Test-Path .env.example) { copy .env.example dist\ }
 
       - name: Upload executable

@@ -4,6 +4,9 @@ echo Building Windows Service (x64)
 echo ========================================
 echo.
 
+REM Run from the project root, whatever folder this script is started from
+cd /d "%~dp0.."
+
 REM Check if Python is available
 python --version >nul 2>&1
 if errorlevel 1 (
@@ -41,7 +44,7 @@ if errorlevel 1 (
 )
 
 echo Step 5: Building executable with PyInstaller...
-pyinstaller build_service.spec --clean
+pyinstaller packaging\build_service.spec --clean
 if errorlevel 1 (
     echo ERROR: Failed to build executable
     pause
@@ -50,7 +53,7 @@ if errorlevel 1 (
 
 echo Step 6: Copying additional files...
 if not exist dist mkdir dist
-copy logo.png dist\ >nul 2>&1
+copy assets\logo.png dist\ >nul 2>&1
 if exist .env copy .env dist\ >nul 2>&1
 if exist .env.example copy .env.example dist\ >nul 2>&1
 

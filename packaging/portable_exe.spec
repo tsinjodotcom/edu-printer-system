@@ -5,6 +5,10 @@ from PyInstaller.utils.hooks import collect_submodules
 
 block_cipher = None
 
+# Resolve everything from the project root so the build works from any cwd.
+ROOT = os.path.abspath(os.path.join(SPECPATH, '..'))
+SRC = os.path.join(ROOT, 'src')
+
 # pkg_resources.extern.<pkg> is synthesized at runtime by a VendorImporter and
 # does not exist on disk, so static analysis cannot follow it. Collect the real
 # pkg_resources._vendor.* modules the import ultimately resolves to.
@@ -18,11 +22,11 @@ if os.path.exists(capabilities_json):
     escpos_data_files.append((capabilities_json, 'escpos'))
 
 a = Analysis(
-    ['main.py'],
-    pathex=[],
+    [os.path.join(SRC, 'main.py')],
+    pathex=[SRC],
     binaries=[],
     datas=[
-        ('logo.png', '.'),
+        (os.path.join(ROOT, 'assets', 'logo.png'), '.'),
     ] + escpos_data_files,
     hiddenimports=[
         'pkg_resources',
@@ -46,7 +50,7 @@ a = Analysis(
         'serial.tools',
         'serial.tools.list_ports',
     ] + pkg_resources_hiddenimports,
-    hookspath=['hooks'],
+    hookspath=[os.path.join(SPECPATH, 'hooks')],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
