@@ -28,12 +28,15 @@ a = Analysis(
     datas=[
         # Service host, copied next to the exe when the service is installed.
         (os.path.join(ROOT, 'vendor', 'nssm-2.24', 'win64', 'nssm.exe'), '.'),
+        # USB driver installer, opened from the settings window.
+        (os.path.join(ROOT, 'vendor', 'zadig', 'zadig.exe'), '.'),
     ] + escpos_data_files,
     hiddenimports=[
         'pkg_resources',
         'config',
         'gui',
         'service_manager',
+        'zadig',
         'tkinter',
         'pywintypes',
         'win32service',
